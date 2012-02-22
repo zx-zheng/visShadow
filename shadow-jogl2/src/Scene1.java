@@ -12,7 +12,7 @@ public class Scene1 extends Scene {
   PlyLoader board = new PlyLoader("src/util/loader/ObjData/board.ply");
   float width = 8,height = width * 145 /210;
   public Tiledboard tboard = 
-      new Tiledboard(-width/2, -height/2, 0, width, height, 8);
+      new Tiledboard(-width/2, -height/2, 0, width, height, 10);
   float i;
   
   public Scene1(){

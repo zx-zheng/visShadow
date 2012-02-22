@@ -11,16 +11,21 @@ public class Tiledboard extends Obj implements Semantic{
   int wdivide, hdivide;
   float vertices[];
   int vao[] = new int[1];
+  public double leftdownx, leftdowny, width, height;
   
   public Tiledboard(float leftdownx, float leftdowny,  float z,
       float width, float height, int wdivide, int hdivide){
     this.wdivide = wdivide; this.hdivide = hdivide;
+    this.leftdownx = leftdownx; this.leftdowny = leftdowny;
+    this.width = width; this.height = height;
     genVertices(leftdownx, leftdowny, z, width, height, wdivide, hdivide);
   }
   
   public Tiledboard(float leftdownx, float leftdowny,  float z,
       float width, float height, int divide){
     this.wdivide = divide;
+    this.leftdownx = leftdownx; this.leftdowny = leftdowny;
+    this.width = width; this.height = height;
     genVertices(leftdownx, leftdowny, z, width, height, divide, divide);
   }
   

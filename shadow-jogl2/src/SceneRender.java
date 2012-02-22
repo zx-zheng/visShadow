@@ -3,6 +3,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 
 import javax.media.opengl.*;
 
@@ -13,7 +16,9 @@ import oekaki.util.*;
 
 import util.gl.*;
 import util.loader.Load2Dfloat;
+import util.loader.Spline;
 import util.render.*;
+import util.render.obj.Tiledboard;
 
 public class SceneRender{
   
@@ -30,6 +35,7 @@ public class SceneRender{
   float[] proj = {-3, 3, -3, 3};
   double posx = 0, posy= 0, height = 2.0, angle = 0;
   private int filecount;
+  Load2Dfloat loader;
   
   public void init(GL2GL3 gl){
     smapfbo = new FBO(gl);
@@ -99,22 +105,40 @@ public class SceneRender{
   }
   private void initWeatherData(GL2GL3 gl){
     String filepath = "/home/michael/zheng/Programs/WeatherData/2009100812/";
-    Load2Dfloat loader = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt",
+    loader = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt",
         filepath + "Temperature_2.0m_T0.txt",
         filepath + "UofWind_10.0m_T0.txt",
         filepath + "VofWind_10.0m_T0.txt");
     loader.loadOffsetLine(0);
+//    Tex2D weatherTex = new Tex2D(GL2.GL_RGBA16F, GL2.GL_RGBA, 
+//        GL.GL_FLOAT, loader.width, loader.height, 
+//        GL.GL_LINEAR, loader.getbuffer(), "wheather data");
+//    gl.glActiveTexture(GL2.GL_TEXTURE0);
+//    weatherTex.init(gl);
+//    weather = TexUnitManager.getInstance().bind(gl, weatherTex);
+    
+    int div = 1;
+    Load2Dfloat l0 = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
+    l0.loadOffsetLine(0);
+    Spline spl0 = new Spline(l0.getbuffer(), l0.width, l0.height, div);
+    Load2Dfloat l1 = new Load2Dfloat(filepath + "Temperature_2.0m_T0.txt");
+    l1.loadOffsetLine(0);
+    Spline spl1 = new Spline(l1.getbuffer(), l1.width, l1.height, div);
+    Load2Dfloat l2 = new Load2Dfloat(filepath + "UofWind_10.0m_T0.txt");
+    l2.loadOffsetLine(0);
+    Spline spl2 = new Spline(l2.getbuffer(), l2.width, l2.height, div);
+    Load2Dfloat l3 = new Load2Dfloat(filepath + "VofWind_10.0m_T0.txt");
+    l3.loadOffsetLine(0);
+    Spline spl3 = new Spline(l3.getbuffer(), l3.width, l3.height, div);
+    ByteBuffer[] splarray = {spl0.getSpline(),spl1.getSpline(),
+        spl2.getSpline(),spl3.getSpline()};
+    ByteBuffer buffer = Load2Dfloat.constructByteBuffer(splarray);
     Tex2D weatherTex = new Tex2D(GL2.GL_RGBA16F, GL2.GL_RGBA, 
-        GL.GL_FLOAT, loader.width, loader.height, 
-        GL.GL_LINEAR, loader.getbuffer(), "wheather data");
+        GL.GL_FLOAT, spl0.width(), spl0.height(), 
+        GL.GL_LINEAR, buffer, "wheather data");
     gl.glActiveTexture(GL2.GL_TEXTURE0);
     weatherTex.init(gl);
     weather = TexUnitManager.getInstance().bind(gl, weatherTex);
-    
-//    TexImage img = new TexImage(weatherTex.width,weatherTex.height,
-//        4,TexImage.TYPE_FLOAT,ByteBuffer.allocate(weatherTex.width*weatherTex.height*4*4));
-//    weatherTex.fromGPUtoCPU(gl,img);
-//    TexImageUtil.saveImage(img, TexImage.TYPE_FLOAT, "out.tif");
   }
   
   private void initshadowmapping(GL2GL3 gl, Shader shader, 
@@ -146,7 +170,7 @@ public class SceneRender{
     scene.renderingToWindow(gl, viewport[0], viewport[1], 
         viewport[2], viewport[3]);
     scene.iterate();
-    scene.shader1i(gl, shadowswitch, "shadowswitch");
+    //scene.shader1i(gl, shadowswitch, "shadowswitch");
     if(switched){
       scene.shader1i(gl, shadowswitch, "shadowswitch");
       switched=false;
@@ -160,14 +184,44 @@ public class SceneRender{
       int y = e.getY();
       //java.awt.Dimension size = e.getComponent().getSize();
       //System.out.println("mouse" + x + " " + y);
-      mouseToWorldCoord(x, y, viewport, proj);
+      mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, true);
     }
   }
   
-  private void mouseToWorldCoord(int x, int y, int[] viewport, float[] proj){
+  private void mouseToWorldCoord(int x, int y, int[] viewport, float[] proj,
+      Load2Dfloat data, Tiledboard board, boolean heightctrl){
     posx = (proj[1] - proj[0])/viewport[2] * (x-viewport[0])+ proj[0];
     posy = (-proj[3] + proj[2])/viewport[3] * (y-viewport[1]) + proj[3];
+    if(heightctrl)height = mouseToHeight(posx, posy, data, board);
     scene.setLightCircleLookOutside(posx,posy,height,angle,1,1,scene.lightCount());
+  }
+  
+  private float mouseToHeight(double wx, double wy, 
+        Load2Dfloat data, Tiledboard board){
+    double localx = (wx - board.leftdownx)/ board.width * data.width,
+          localy = (wy - board.leftdowny)/ board.height * data.height;
+    localx = clamp(localx, 0, data.width);
+    localy = clamp(localy, 0, data.height);
+    int localxi = (int)localx, localyi = (int)localy;
+    double percentx = localx - localxi, percenty = localy- localyi;
+    int bufferindex = data.width * (data.height - localyi -1) + localxi;
+    FloatBuffer fb = data.getbuffer().asFloatBuffer();
+    //System.out.println(percentx+" "+percenty);
+    double heightofpoint = 
+        (1-percenty)*(getdatafrombuffer(fb, bufferindex)*(1-percentx)
+        +getdatafrombuffer(fb, bufferindex+1)*percentx)
+        +percenty*(getdatafrombuffer(fb,bufferindex-data.width)*(1-percentx)
+            +getdatafrombuffer(fb,bufferindex-data.width+1)*percentx);
+    return (float)heightofpoint;
+  }
+  
+  private double getdatafrombuffer(FloatBuffer fb, int index){
+    return Math.sqrt(Math.pow(fb.get(4*index+2), 2)
+        +Math.pow(fb.get(4*index+3),2)) * 0.05+0.1;
+  }
+  
+  public static double clamp (double i, double low, double high) {
+    return java.lang.Math.max (java.lang.Math.min (i, high), low);
   }
   
   public void mouseWheelMoved(MouseWheelEvent e){

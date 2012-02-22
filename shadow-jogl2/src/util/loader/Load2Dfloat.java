@@ -28,6 +28,8 @@ public class Load2Dfloat extends Loader{
       buffer.order(ByteOrder.LITTLE_ENDIAN);
     }
   }
+  
+  
 
   @Override
   public void loadOffsetLineValue
@@ -53,6 +55,24 @@ public class Load2Dfloat extends Loader{
   public void readheader(int i) {
     width = scanner[i].nextInt();
     height = scanner[i].nextInt();
+  }
+  
+  public static ByteBuffer constructByteBuffer(ByteBuffer[] buffer){
+    ByteBuffer result = ByteBuffer.allocate(buffer[0].capacity()*4);
+    if(ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)){
+      result.order(ByteOrder.LITTLE_ENDIAN);
+    }
+    for(int i = 0; i < buffer.length; i++){
+      buffer[i].rewind();
+    }
+    for(int i = 0; i < buffer[0].capacity()/4; i++){
+      for(int j = 0; j < buffer.length; j++){
+        result.putFloat(buffer[j].getFloat());
+      }
+    }
+    result.rewind();
+    FloatBuffer fb = result.asFloatBuffer();
+    return result;
   }
 
 }
