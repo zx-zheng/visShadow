@@ -60,21 +60,26 @@ void main(){
 		   0, 0.5, 0, 0,
 		   0, 0, 0.5, 0,
 		   0.5, 0.5, 0.5, 1);
-  float shadow, shade, octest, count;
+  ivec2 offset[5] = ivec2[](ivec2(0,-1),ivec2(-1,0),ivec2(0,0),ivec2(1,0),ivec2(0,1));
+  float shadow, shade, octest, count = 0;
   for (int i = 0; i < lightcount_real_virtual.x; ++i){
     vec4 posfromlightworld = lightsview[i] * Geom.worldpos;
     vec4 posfromlight = bias * lightsproj[i] * posfromlightworld;
     posfromlight /= posfromlight.w;
     if(posfromlight.x > 0 && posfromlight.x < 1 
        && posfromlight.y > 0 && posfromlight.y < 1 && posfromlightworld.z < 0){
-      float occluder = texture(shadowmap, vec3(posfromlight.xy, i)).x;
-      float shadowtmp = occluder < abs(posfromlightworld.z) - 0.02? 0:1.0;
+      float occluder, shadowtmp=0;
+      for(int j = 0; j < 5; j++){
+	occluder = textureOffset(shadowmap, vec3(posfromlight.xy, i), offset[j]).x;
+	shadowtmp += occluder < abs(posfromlightworld.z) - 0.02? 0:1.0;
+      }
+      shadowtmp *= 0.2;
       vec3 lightvec = normalize((inverse(lightsview[i]) * vec4(0,0,0,1)).xyz 
 				- Geom.worldpos.xyz/Geom.worldpos.w);
       float shadetmp = max(0, dot(Geom.normal, lightvec));
       shade += shadetmp;
       shadow += shadowtmp;
-      count += 1;
+      count++;
     }
   }   
   shade /= ( count);
@@ -88,10 +93,10 @@ void main(){
   vec3 color = valuetocolor(temperature).xyz;
 
   if(shadowswitch == 1)shadow = 1;
-
   //Color = vec4(color * (shade * (0.3 * shadow + 0.4) + 0.3) , 1);
   //Color = vec4(color * (shade * (0.6) + 0.4 - (1-shadow)*0.4 * sin(3.14/2*shade)) , 1);
   Color = vec4(color * (0.3 + shadow * 0.7 *shade + (1-shadow) * 0.2 * pow(shade, 1)), 1);
+  //Color = vec4(color * (0.3 + shadow * 0.7 *shade),1);
   //Color = vec4(count/10);
-  //Color = vec4(shade);
+  //Color = vec4(shadow * 1);
 }

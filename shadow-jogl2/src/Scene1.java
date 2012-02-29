@@ -12,7 +12,7 @@ public class Scene1 extends Scene {
   PlyLoader board = new PlyLoader("src/util/loader/ObjData/board.ply");
   float width = 8,height = width * 145 /210;
   public Tiledboard tboard = 
-      new Tiledboard(-width/2, -height/2, 0, width, height, 10);
+      new Tiledboard(-width/2, -height/2, 0, width, height, 16);
   float i;
   
   public Scene1(){
@@ -100,7 +100,7 @@ public class Scene1 extends Scene {
       this.lights.get(i).lookatd(eyeX, eyeY, eyeZ, 
           eyeX + Math.sin(angle), eyeY + Math.cos(angle), eyeZ + Math.sin(Math.toRadians(theta)), 
           0, 1, 0);
-      this.lights.get(i).perspectivef(fovy, 1, 0.1f, 30f);
+      this.lights.get(i).perspectivef(fovy, 1, 0.01f, 30f);
     } 
     this.lights.get(uselightcount-1).lookatd(eyeX, eyeY, eyeZ, 
         eyeX, eyeY, eyeZ-1, 

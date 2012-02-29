@@ -24,7 +24,7 @@ public class SceneRender{
   
   FBO smapfbo;
   int SHADOWMAPWIDTH = 2048, SHADOWMAPHEIGHT = 2048, shadowswitch; 
-  boolean switched = false, rightclicking = false;
+  boolean switched = false, rightclicking = false, heightctrl = false;
   public Scene1 scene;
   public TexViewer texviewer;
   Shader shader, shadowmapping,shadowmappingtess;
@@ -32,7 +32,8 @@ public class SceneRender{
   Tex2D tex;
   FBO fbo;
   int[] viewport = {0, 0, 1024, 1024};
-  float[] proj = {-3, 3, -3, 3};
+  float projsize = 3.f;
+  float[] proj = {-projsize, projsize, -projsize, projsize};
   double posx = 0, posy= 0, height = 2.0, angle = 0;
   private int filecount;
   Load2Dfloat loader;
@@ -44,6 +45,7 @@ public class SceneRender{
     texviewer.init(gl);
     
     initWeatherData(gl);
+    //initTestData(gl);
     
     scene = new Scene1();
     scene.initShadowmap(gl, 4, SHADOWMAPWIDTH, SHADOWMAPHEIGHT);
@@ -117,7 +119,7 @@ public class SceneRender{
 //    weatherTex.init(gl);
 //    weather = TexUnitManager.getInstance().bind(gl, weatherTex);
     
-    int div = 1;
+    int div = 10;
     Load2Dfloat l0 = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
     l0.loadOffsetLine(0);
     Spline spl0 = new Spline(l0.getbuffer(), l0.width, l0.height, div);
@@ -128,6 +130,32 @@ public class SceneRender{
     l2.loadOffsetLine(0);
     Spline spl2 = new Spline(l2.getbuffer(), l2.width, l2.height, div);
     Load2Dfloat l3 = new Load2Dfloat(filepath + "VofWind_10.0m_T0.txt");
+    l3.loadOffsetLine(0);
+    Spline spl3 = new Spline(l3.getbuffer(), l3.width, l3.height, div);
+    ByteBuffer[] splarray = {spl0.getSpline(),spl1.getSpline(),
+        spl2.getSpline(),spl3.getSpline()};
+    ByteBuffer buffer = Load2Dfloat.constructByteBuffer(splarray);
+    Tex2D weatherTex = new Tex2D(GL2.GL_RGBA16F, GL2.GL_RGBA, 
+        GL.GL_FLOAT, spl0.width(), spl0.height(), 
+        GL.GL_LINEAR, buffer, "wheather data");
+    gl.glActiveTexture(GL2.GL_TEXTURE0);
+    weatherTex.init(gl);
+    weather = TexUnitManager.getInstance().bind(gl, weatherTex);
+  }
+  
+  private void initTestData(GL2GL3 gl){
+    String filepath = "/home/michael/zheng/Programs/Testdata/";    
+    int div = 1;
+    Load2Dfloat l0 = new Load2Dfloat(filepath + "test.txt");
+    l0.loadOffsetLine(0);
+    Spline spl0 = new Spline(l0.getbuffer(), l0.width, l0.height, div);
+    Load2Dfloat l1 = new Load2Dfloat(filepath + "test.txt");
+    l1.loadOffsetLine(0);
+    Spline spl1 = new Spline(l1.getbuffer(), l1.width, l1.height, div);
+    Load2Dfloat l2 = new Load2Dfloat(filepath + "test.txt");
+    l2.loadOffsetLine(0);
+    Spline spl2 = new Spline(l2.getbuffer(), l2.width, l2.height, div);
+    Load2Dfloat l3 = new Load2Dfloat(filepath + "test.txt");
     l3.loadOffsetLine(0);
     Spline spl3 = new Spline(l3.getbuffer(), l3.width, l3.height, div);
     ByteBuffer[] splarray = {spl0.getSpline(),spl1.getSpline(),
@@ -184,7 +212,7 @@ public class SceneRender{
       int y = e.getY();
       //java.awt.Dimension size = e.getComponent().getSize();
       //System.out.println("mouse" + x + " " + y);
-      mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, true);
+      mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, heightctrl);
     }
   }
   
@@ -192,8 +220,10 @@ public class SceneRender{
       Load2Dfloat data, Tiledboard board, boolean heightctrl){
     posx = (proj[1] - proj[0])/viewport[2] * (x-viewport[0])+ proj[0];
     posy = (-proj[3] + proj[2])/viewport[3] * (y-viewport[1]) + proj[3];
-    if(heightctrl)height = mouseToHeight(posx, posy, data, board);
-    scene.setLightCircleLookOutside(posx,posy,height,angle,1,1,scene.lightCount());
+    //高さ自動調整
+    float heighttmp=0;
+    if(heightctrl)heighttmp = mouseToHeight(posx, posy, data, board);
+    scene.setLightCircleLookOutside(posx,posy,height+heighttmp,angle,1,1,scene.lightCount());
   }
   
   private float mouseToHeight(double wx, double wy, 
@@ -210,14 +240,14 @@ public class SceneRender{
     double heightofpoint = 
         (1-percenty)*(getdatafrombuffer(fb, bufferindex)*(1-percentx)
         +getdatafrombuffer(fb, bufferindex+1)*percentx)
-        +percenty*(getdatafrombuffer(fb,bufferindex-data.width)*(1-percentx)
-            +getdatafrombuffer(fb,bufferindex-data.width+1)*percentx);
+        +percenty*(getdatafrombuffer(fb,bufferindex+data.width)*(1-percentx)
+            +getdatafrombuffer(fb,bufferindex+data.width+1)*percentx);
     return (float)heightofpoint;
   }
   
   private double getdatafrombuffer(FloatBuffer fb, int index){
     return Math.sqrt(Math.pow(fb.get(4*index+2), 2)
-        +Math.pow(fb.get(4*index+3),2)) * 0.05+0.1;
+        +Math.pow(fb.get(4*index+3),2)) * 0.05;
   }
   
   public static double clamp (double i, double low, double high) {
@@ -240,6 +270,11 @@ public class SceneRender{
       if(shadowswitch==0){shadowswitch=1;}
       else{shadowswitch=0;}
       switched = true;
+      break;
+    case 'h':
+      if(heightctrl){heightctrl=false;}
+      else{heightctrl=true;}
+      break;
     }
   }
   
