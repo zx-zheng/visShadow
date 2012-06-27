@@ -1,3 +1,5 @@
+import gui.Mainpanel;
+
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -24,9 +26,10 @@ public class SceneRender{
   
   FBO smapfbo;
   int SHADOWMAPWIDTH = 2048, SHADOWMAPHEIGHT = 2048, shadowswitch; 
-  boolean switched = false, rightclicking = false, heightctrl = false;
+  boolean switched = true, rightclicking = false, heightctrl = false;
   public Scene1 scene;
   public TexViewer texviewer;
+  public Filter fxaa;
   Shader shader, shadowmapping,shadowmappingtess;
   TexBindSet tbs, weather;
   Tex2D tex;
@@ -34,30 +37,48 @@ public class SceneRender{
   int[] viewport = {0, 0, 1024, 1024};
   float projsize = 3.f;
   float[] proj = {-projsize, projsize, -projsize, projsize};
-  double posx = 0, posy= 0, height = 2.0, angle = 0;
+  double posx = 0, posy= 0, height = 5.0, angle = 0;
   private int filecount;
   Load2Dfloat loader;
+  float gamma = 1, border = 0, heightscale = 0.05f;
   
   public void init(GL2GL3 gl){
+    
     smapfbo = new FBO(gl);
     
     texviewer = new TexViewer();
     texviewer.init(gl);
     
+    fxaa = new Filter("src/util/render/FXAA/vert.c", "src/util/render/FXAA/frag.c");
+    fxaa.init(gl);
+    
     initWeatherData(gl);
     //initTestData(gl);
     
     scene = new Scene1();
-    scene.initShadowmap(gl, 4, SHADOWMAPWIDTH, SHADOWMAPHEIGHT);
-//    for(int i = 0; i < scene.lightCount(); i++){
+    scene.initShadowmap(gl, 2, SHADOWMAPWIDTH, SHADOWMAPHEIGHT);
+    for(int i = 0; i < scene.lightCount(); i++){
+      scene.lights.get(i).init(gl);
 //      float angle = 2 * (float)Math.PI * i / (scene.lightCount() - 1);
 //      //scene.lights.get(i).lookat(3, 3, i + 1, 0, 0, 0, 0, 1, 0);
 //      scene.lights.get(i).lookat(6*(float)Math.sin(angle), 6*(float)Math.cos(angle), 8, 
 //          0, 0, 0, 0, 1, 0);
 //      scene.lights.get(i).perspectivef(120f, 1, 0.1f, 50f);
-//    }
-    scene.lights.get(scene.lightCount()-1).lookatd(0, 0, 20, 0, 0, 0, 0, 1, 0);
-    scene.lights.get(scene.lightCount()-1).orthof(-5, 5, -5, 5, 0, 30);
+    }
+    scene.lights.get(0).lookatd(4, 4, 20, 0, 0, 0, 0, 1, 0);
+    //scene.lights.get(0).lookatd(0, 0, 50, 0, 0, 0, 0, 1, 0);
+    scene.lights.get(0).orthof(-4, 4, -4, 4, 0, 60);
+    scene.lights.get(0).setattr(0, 1);
+    scene.lights.get(0).setintensity(1.25);
+    
+//    scene.lights.get(2).lookatd(4, 4, 10, 0, 0, 0, 0, 1, 0);
+//    scene.lights.get(2).orthof(-5, 5, -5, 5, 0, 30);
+    
+    scene.lights.get(1).lookatd(0, 0, 50, 0, 0, 0, 0, 1, 0);
+    scene.lights.get(1).orthof(-4, 4, -4, 4, 0, 100);
+    
+//    scene.lights.get(2).lookatd(0, 0, 50, 0, 0, 0, 0, 1, 0);
+//    scene.lights.get(2).orthof(-5, 5, -5, 5, 0, 100);
 
     
     shader = new Shader("src/SimpleShader/vert.c",
@@ -76,12 +97,12 @@ public class SceneRender{
         "src/ShadowMapping/frag.c");
     shadowmappingtess.init(gl);
     
-    TexImage img = TexImageUtil.loadImage("original1.png", 3, TexImage.TYPE_BYTE);
-    tex = new Tex2D(GL2.GL_RGB, GL2. GL_BGR,
-        GL2.GL_UNSIGNED_BYTE, img.width, img.height,
+    //TexImage img = TexImageUtil.loadImage("original1.png", 3, TexImage.TYPE_BYTE);
+    tex = new Tex2D(GL2.GL_RGBA, GL2.GL_RGBA,
+        GL2.GL_FLOAT, 1024, 1024,
         GL2.GL_LINEAR, GL2.GL_REPEAT, GL2.GL_REPEAT,
-         img.buffer, "testimage");
-    gl.glActiveTexture(GL2.GL_TEXTURE0);
+         null, "testimage");
+    //gl.glActiveTexture(GL2.GL_TEXTURE0);
     tex.init(gl);
     tbs = new TexBindSet(tex);
     tbs.bind(gl);
@@ -90,16 +111,15 @@ public class SceneRender{
     
     //scene.updateligths(gl, shadowmapping);
     scene.init(gl, shadowmapping, shadowmappingtess);
-    scene.lookat(0, 0, 7, 0, 0, 0, 0, 1, 0);
+    scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
     //scene.perspectivef(50, 1, 1f, 30f);
-    scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 30);
+    scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
-    scene.setTessLevel(gl, 64);
-    
-    
-   
-    
+    scene.setTessLevel(gl, 8);
+    //円柱オフ
+    scene.shader1i(gl, 0, "offheight");
+       
     fbo = new FBO(gl);
     fbo.attachTexture(gl, tbs);
     fbo.attachDepthRBO(gl, 1024, 1024);
@@ -107,6 +127,7 @@ public class SceneRender{
   }
   private void initWeatherData(GL2GL3 gl){
     String filepath = "/home/michael/zheng/Programs/WeatherData/2009100812/";
+//    String filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
     loader = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt",
         filepath + "Temperature_2.0m_T0.txt",
         filepath + "UofWind_10.0m_T0.txt",
@@ -135,9 +156,27 @@ public class SceneRender{
     ByteBuffer[] splarray = {spl0.getSpline(),spl1.getSpline(),
         spl2.getSpline(),spl3.getSpline()};
     ByteBuffer buffer = Load2Dfloat.constructByteBuffer(splarray);
+    
+    //面を格子状にする
+//    int gridwidth = 10, gridinterval = 5;
+//    for(int i = 0; i < spl0.height()-gridinterval;i+=gridwidth*2){
+//      for(int k = 0; k < gridinterval;k++){
+//        for(int j = 0; j < spl0.width();j++){
+//          buffer.putFloat(16*spl0.width()*(i+k)+16*j+4*2, 0);
+//          buffer.putFloat(16*spl0.width()*(i+k)+16*j+4*3, 0);
+//        } } }
+//    
+//    for(int i = 0; i < spl0.height();i++){
+//      for(int k = 0; k < spl0.width()-gridinterval;k+=gridwidth*2){
+//        for(int j = 0; j < gridinterval;j++){
+//          buffer.putFloat(16*spl0.width()*i+16*(k+j)+4*2, 0);
+//          buffer.putFloat(16*spl0.width()*i+16*(k+j)+4*3, 0);
+//        } } }
+    
     Tex2D weatherTex = new Tex2D(GL2.GL_RGBA16F, GL2.GL_RGBA, 
         GL.GL_FLOAT, spl0.width(), spl0.height(), 
         GL.GL_LINEAR, buffer, "wheather data");
+//        GL.GL_NEAREST, buffer, "wheather data");
     gl.glActiveTexture(GL2.GL_TEXTURE0);
     weatherTex.init(gl);
     weather = TexUnitManager.getInstance().bind(gl, weatherTex);
@@ -146,16 +185,16 @@ public class SceneRender{
   private void initTestData(GL2GL3 gl){
     String filepath = "/home/michael/zheng/Programs/Testdata/";    
     int div = 1;
-    Load2Dfloat l0 = new Load2Dfloat(filepath + "test.txt");
+    Load2Dfloat l0 = new Load2Dfloat(filepath + "test4.txt");
     l0.loadOffsetLine(0);
     Spline spl0 = new Spline(l0.getbuffer(), l0.width, l0.height, div);
-    Load2Dfloat l1 = new Load2Dfloat(filepath + "test.txt");
+    Load2Dfloat l1 = new Load2Dfloat(filepath + "test4.txt");
     l1.loadOffsetLine(0);
     Spline spl1 = new Spline(l1.getbuffer(), l1.width, l1.height, div);
-    Load2Dfloat l2 = new Load2Dfloat(filepath + "test.txt");
+    Load2Dfloat l2 = new Load2Dfloat(filepath + "test3.txt");
     l2.loadOffsetLine(0);
     Spline spl2 = new Spline(l2.getbuffer(), l2.width, l2.height, div);
-    Load2Dfloat l3 = new Load2Dfloat(filepath + "test.txt");
+    Load2Dfloat l3 = new Load2Dfloat(filepath + "test2.txt");
     l3.loadOffsetLine(0);
     Spline spl3 = new Spline(l3.getbuffer(), l3.width, l3.height, div);
     ByteBuffer[] splarray = {spl0.getSpline(),spl1.getSpline(),
@@ -191,19 +230,28 @@ public class SceneRender{
   public void rendering(GL2GL3 gl){
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
     gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-    scene.ShadowMap(gl);
+    scene.ShadowMap(gl,true);
     texviewer.rendering(gl, scene.getShadowmapTexture(), 1024, 0, 640, 640);
-    //texviewer.rendering(gl, weather, 640, 0, 640, 640);
+    //texviewer.rendering(gl, tbs, 1024, 0, 640, 640);
+    //texviewer.rendering(gl, tbs, 640, 0, 640, 640);
     gl.glFlush();
     scene.renderingToWindow(gl, viewport[0], viewport[1], 
-        viewport[2], viewport[3]);
+        viewport[2], viewport[3], false);
+//    scene.renderingToFBO(gl, fbo, viewport[0], viewport[1], 
+//        viewport[2], viewport[3]);
     scene.iterate();
-    //scene.shader1i(gl, shadowswitch, "shadowswitch");
+    //fxaa.filtering(gl, tbs, null);
     if(switched){
       scene.shader1i(gl, shadowswitch, "shadowswitch");
+      scene.shader1f(gl, gamma, "gamma");
+//      scene.shader1f(gl, border, "border");
+//      scene.shadowmapshader1f(gl, border, "border");
+      scene.shader1f(gl, heightscale, "heightscale");
+      scene.shadowmapshader1f(gl, heightscale, "heightscale");
+
       switched=false;
     }
-    //screenshot("SS/", 1024, 1024);
+    //screenshot("SS/ipsj2/", 1024, 1024);
   }
   
   public void mouseDragged(MouseEvent e){
@@ -213,6 +261,8 @@ public class SceneRender{
       //java.awt.Dimension size = e.getComponent().getSize();
       //System.out.println("mouse" + x + " " + y);
       mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, heightctrl);
+      border = (float)y/(float)viewport[3]-0.1f;
+      switched = true;
     }
   }
   
@@ -223,7 +273,10 @@ public class SceneRender{
     //高さ自動調整
     float heighttmp=0;
     if(heightctrl)heighttmp = mouseToHeight(posx, posy, data, board);
-    scene.setLightCircleLookOutside(posx,posy,height+heighttmp,angle,1,1,scene.lightCount());
+    //scene.setLightCircleLookOutside(posx,posy,height+heighttmp,angle,1,1,scene.lightCount());
+    posx = (double)x/viewport[2]*2*Math.PI;
+    posx = 2*Math.PI*0.8;
+    //scene.setLightCircleLookInside(posx, height);
   }
   
   private float mouseToHeight(double wx, double wy, 
@@ -256,12 +309,15 @@ public class SceneRender{
   
   public void mouseWheelMoved(MouseWheelEvent e){
     if(rightclicking){
-      angle += e.getWheelRotation() * 0.5;
-      System.out.println(angle);
+      //angle += e.getWheelRotation() * 0.5;
+      heightscale += e.getWheelRotation() * 0.01;
+      switched = true;
+      System.out.println(heightscale);
     }else{
       height += e.getWheelRotation() * 0.1;
+      //scene.setLightCircleLookInside(posx, height);
     }
-    scene.setLightCircleLookOutside(posx,posy,height,angle,1,1,scene.lightCount());
+    //scene.setLightCircleLookOutside(posx,posy,height,angle,1,1,scene.lightCount());
   }
   
   public void keyPressed(KeyEvent arg0){
@@ -274,6 +330,16 @@ public class SceneRender{
     case 'h':
       if(heightctrl){heightctrl=false;}
       else{heightctrl=true;}
+      break;
+    case 'p':
+      gamma+=0.1;
+      System.out.println(gamma);
+      switched = true;
+      break;
+    case 'o':
+      gamma-=0.1;
+      System.out.println(gamma);
+      switched = true;
       break;
     }
   }

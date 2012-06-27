@@ -63,7 +63,7 @@ public class TexViewer extends Filter{
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
     gl.glViewport(offsetx, offsety, width, height);
     gl.glBindVertexArray(vao[0]);
-    gl.glDrawArrays(GL2.GL_QUADS, 0, 4);
+    gl.glDrawArrays(GL2.GL_TRIANGLE_STRIP, 0, 4);
     gl.glBindVertexArray(0);
     filter.unuse(gl);
   }

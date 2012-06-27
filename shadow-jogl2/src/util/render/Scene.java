@@ -1,6 +1,7 @@
 package util.render;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
 
 import javax.media.opengl.*;
@@ -37,7 +38,9 @@ public abstract class Scene implements RenderingPass {
   uniformlightsviewtess, uniformlightsprojtess,
   uniformview, uniformproj,
   uniformviewtess, uniformprojtess,
-  uniformlightcount, uniformlightcounttess;
+  uniformlightcount, uniformlightcounttess,
+  uniformlightscolor, uniformlightscolortess,
+  uniformlightsattr, uniformlightsattrtess;
   
   public Scene(){
     pvmat = new PMVMatrix();
@@ -114,6 +117,10 @@ public abstract class Scene implements RenderingPass {
         (shadowmapshader.getID(), "lightsview");
     uniformlightsproj = gl.glGetUniformLocation
         (shadowmapshader.getID(), "lightsproj");
+    uniformlightscolor = gl.glGetUniformLocation
+        (shadowmapshader.getID(), "lightscolor");
+    uniformlightsattr = gl.glGetUniformLocation
+        (shadowmapshader.getID(), "lightsattr");
     uniformlightcount = gl.glGetUniformLocation
         (shadowmapshader.getID(), "lightcount_real_virtual");
     
@@ -130,6 +137,10 @@ public abstract class Scene implements RenderingPass {
         (shadowmapshadertess.getID(), "lightsview");
     uniformlightsprojtess = gl.glGetUniformLocation
         (shadowmapshadertess.getID(), "lightsproj");
+    uniformlightscolortess = gl.glGetUniformLocation
+        (shadowmapshadertess.getID(), "lightscolor");
+    uniformlightsattrtess = gl.glGetUniformLocation
+        (shadowmapshader.getID(), "lightsattr");
     uniformlightcounttess = gl.glGetUniformLocation
         (shadowmapshadertess.getID(), "lightcount_real_virtual");
   }
@@ -160,9 +171,12 @@ public abstract class Scene implements RenderingPass {
   
   public void updatelights(GL2GL3 gl, 
       int uniformlightsview, int uniformlightsproj, 
+      int uniformlightscolor, int uniformlightsattr,
       int uniformlightcount){
     FloatBuffer lightspos = FloatBuffer.allocate(16 * realLightcount);
     FloatBuffer lightsproj = FloatBuffer.allocate(16 * realLightcount);
+    FloatBuffer lightscolor = FloatBuffer.allocate(4 * realLightcount);
+    IntBuffer lightsattr = IntBuffer.allocate(4 * realLightcount);
     
     for(int i = 0; i < realLightcount; i++){
       FloatBuffer tmp = lights.get(i).getMatrixf(GL2.GL_MODELVIEW);
@@ -174,32 +188,48 @@ public abstract class Scene implements RenderingPass {
       tmp.mark();
       lightsproj.put(tmp);
       tmp.reset();
+      
+      lightscolor.put(lights.get(i).color());
+      lightscolor.put((float)lights.get(i).intensity);
+      
+      lightsattr.put(lights.get(i).attr());
     }
+    
     lightspos.rewind();
-    lightsproj.rewind();  
+    lightsproj.rewind();
+    lightscolor.rewind();
+    lightsattr.rewind();
     
     gl.glUniformMatrix4fv(uniformlightsview, realLightcount,
         false, lightspos);
     gl.glUniformMatrix4fv(uniformlightsproj, realLightcount,
         false, lightsproj);
     gl.glUniform2i(uniformlightcount, realLightcount, virtualLightcount);
+    gl.glUniform4fv(uniformlightscolor, realLightcount, lightscolor);
+    gl.glUniform4iv(uniformlightsattr, realLightcount, lightsattr);
   }
   
   public void updateligths(GL2GL3 gl, Shader shader){
     updatelights(gl, 
         gl.glGetUniformLocation(shader.getID(), "lightsview"), 
         gl.glGetUniformLocation(shader.getID(), "lightsproj"),
+        gl.glGetUniformLocation(shader.getID(), "lightscolor"),
+        gl.glGetUniformLocation(shader.getID(), "lightsattr"),
         gl.glGetUniformLocation(shader.getID(), "lightcount_real_virtual"));   
   }
   
   public void smapupdatelights(GL2GL3 gl){
     updatelights(gl, 
-        uniformlightsview, uniformlightsproj, uniformlightcount); 
+        uniformlightsview, uniformlightsproj, 
+        uniformlightscolor, uniformlightsattr, 
+        uniformlightcount); 
   }
   
   public void smapupdatelightstess(GL2GL3 gl){
     updatelights(gl, 
-        uniformlightsviewtess, uniformlightsprojtess, uniformlightcounttess); 
+        uniformlightsviewtess, uniformlightsprojtess, 
+        uniformlightscolortess, uniformlightsattrtess,
+        uniformlightcounttess); 
   }
   
   public void ShadowMap(GL2GL3 gl){
@@ -212,10 +242,14 @@ public abstract class Scene implements RenderingPass {
     gl.glViewport(0, 0, smapwidth, smapheight);
     
     shadowmapshader.use(gl);
+    gl.glUniform1i(
+        gl.glGetUniformLocation(shadowmapshader.getID(), "stage"),0);
     smapupdatelights(gl);
     scene(gl, shadowmapshader, show);
     
     shadowmapshadertess.use(gl);
+    gl.glUniform1i(
+        gl.glGetUniformLocation(shadowmapshadertess.getID(), "stage"),0);
     smapupdatelightstess(gl);
     scenetess((GL4)gl, shadowmapshadertess);
     
@@ -249,6 +283,31 @@ public abstract class Scene implements RenderingPass {
   public void renderingToWindow(GL2GL3 gl, int offsetx, int offsety,
       int width, int height, boolean show){
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
+    gl.glClearColor(1, 1, 1, 1);
+    gl.glViewport(offsetx, offsety, width, height);
+    
+    shader.use(gl);
+    updateligths(gl, shader);
+    scene(gl, shader, show);
+    
+    shadertess.use(gl);
+    updateligths(gl, shadertess);
+    scenetess((GL3)gl, shadertess, false);
+    shadertess.unuse(gl);
+    
+    gl.glFlush();
+  }   
+  
+  public void renderingToFBO(GL2GL3 gl, FBO fbo, int offsetx, int offsety,
+      int width, int height){
+    renderingToFBO(gl, fbo, offsetx, offsety, width, height, true);
+  }
+  
+  public void renderingToFBO(GL2GL3 gl, FBO fbo, int offsetx, int offsety,
+      int width, int height, boolean show){
+    shader.use(gl);
+    fbo.bind(gl);
+    gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
     gl.glViewport(offsetx, offsety, width, height);
     
     shader.use(gl);
@@ -260,17 +319,6 @@ public abstract class Scene implements RenderingPass {
     scenetess((GL3)gl, shadertess);
     shadertess.unuse(gl);
     
-    gl.glFlush();
-  }   
-  
-  public void renderingToFBO(GL2GL3 gl, FBO fbo, int offsetx, int offsety,
-      int width, int height){
-    shader.use(gl);
-    fbo.bind(gl);
-    gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-    gl.glViewport(offsetx, offsety, width, height);
-    scene(gl, shader);
-    shader.unuse(gl);
     fbo.unbind(gl);
     gl.glFlush();
   }   
@@ -374,6 +422,15 @@ public abstract class Scene implements RenderingPass {
         level);
     shadertess.unuse(gl);
   }
+  
+  public void shadowmapshader1f(GL2GL3 gl, float i, String name){
+    shadowmapshader.use(gl);
+    gl.glUniform1f(gl.glGetUniformLocation(shadowmapshader.getID(), name),i);
+    shadowmapshadertess.use(gl);
+    gl.glUniform1f(gl.glGetUniformLocation(shadowmapshadertess.getID(), name),i);
+    shadowmapshadertess.unuse(gl);
+  }
+  
   public void shader1i(GL2GL3 gl, int i, String name){
     shader.use(gl);
     gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), name),i);
@@ -381,6 +438,15 @@ public abstract class Scene implements RenderingPass {
     gl.glUniform1i(gl.glGetUniformLocation(shadertess.getID(), name),i);
     shadertess.unuse(gl);
   }
+  
+  public void shader1f(GL2GL3 gl, float i, String name){
+    shader.use(gl);
+    gl.glUniform1f(gl.glGetUniformLocation(shader.getID(), name),i);
+    shadertess.use(gl);
+    gl.glUniform1f(gl.glGetUniformLocation(shadertess.getID(), name),i);
+    shadertess.unuse(gl);
+  }
+  
   @Override
   public abstract void scene(GL2GL3 gl, Shader shader);
     // TODO Auto-generated method stub

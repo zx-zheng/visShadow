@@ -10,7 +10,7 @@ public class PlyLoader extends Loader implements Semantic{
 
   String line;
   String[] linetmp;
-  int totalvertex, totalproperty = 0, totalface;
+  int totalvertex, totalproperty = 0, totalface, realtotalface;
   boolean inited;
 
   FloatBuffer vertex;
@@ -20,7 +20,6 @@ public class PlyLoader extends Loader implements Semantic{
   public PlyLoader(String filepath){
     super(filepath);
     scanner[0].useDelimiter("\\n");
-    // TODO Auto-generated constructor stub
   }
 
   @Override
@@ -100,20 +99,23 @@ public class PlyLoader extends Loader implements Semantic{
 
   private void readface(){
     String[] splited;
-    index = IntBuffer.allocate(totalface * 3 * 4); 
+    //一つの面を構成する頂点が4以上だと別に処理する必要がある
+    index = IntBuffer.allocate(totalface * 3 * 2); 
     int faceform;
-
+    realtotalface = totalface;
     for(int i = 0; i < totalface; i++){
       line = scanner[0].next();
       splited = line.split(" ");
       faceform = new Integer(splited[0]);
-      //transform to triangels
+      //transform to triangles
       for(int j = 2; j < faceform; j++){
         //ポリゴンの順番のためにj+1がさき
         index.put(new Integer(splited[1]));
         index.put(new Integer(splited[j + 1]));
         index.put(new Integer(splited[j]));
+        realtotalface++;
       }
+      realtotalface--;
     }
 
     index.rewind();
@@ -142,7 +144,7 @@ public class PlyLoader extends Loader implements Semantic{
 
 
       gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, vboid[1]);
-      gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, totalface * 3 * 4,
+      gl.glBufferData(GL.GL_ELEMENT_ARRAY_BUFFER, realtotalface * 3 * 4,
           index, GL.GL_STATIC_DRAW);
 
       gl.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -166,7 +168,7 @@ public class PlyLoader extends Loader implements Semantic{
 
   public void rendering(GL2GL3 gl){
     gl.glBindVertexArray(vaoid[0]); 
-    gl.glDrawElementsInstanced(GL4.GL_TRIANGLES, totalface * 3,
+    gl.glDrawElementsInstanced(GL4.GL_TRIANGLES, realtotalface * 3,
         GL2.GL_INT, null, 1);
     gl.glBindVertexArray(0);
   }

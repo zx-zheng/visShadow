@@ -3,16 +3,11 @@
 #define ATTR_POSITION 0
 #define ATTR_NORMAL 1
 #define ATTR_COLOR 2
-#define ATTR_AREA 6
-
-#define ATTR_POSITION 0
-#define ATTR_NORMAL 1
-#define ATTR_COLOR 2
-#define ATTR_TEXCOORD0_INDX = 3
+#define ATTR_TEXCOORD0_INDX 3
 #define ATTR_AREA 6
 
 layout(location = ATTR_POSITION) in vec3 vertex;
-layout(location = ATTRTEXCOORD0_INDX) in vec2 texcoord;
+layout(location = ATTR_TEXCOORD0_INDX) in vec2 texcoord;
 
 out vert{
   vec2 texcoord;

@@ -56,7 +56,7 @@ public class Filter implements RenderingPass, Semantic{
     }
     gl.glViewport(0, 0, tbs.tex.width, tbs.tex.height);
     gl.glBindVertexArray(vao[0]);
-    gl.glDrawArrays(GL2.GL_TRIANGLES, 0, 6);
+    gl.glDrawArrays(GL2.GL_TRIANGLE_STRIP, 0, 6);
     gl.glBindVertexArray(0);
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
     filter.unuse(gl);
@@ -66,8 +66,8 @@ public class Filter implements RenderingPass, Semantic{
     float[] frame = {
       -1f, 1f, 0,   0, 1f,
       1f, 1f, 0,    1f, 1f,
-      1f, -1f, 0,    1f, 0,
-      -1f, -1f, 0,    0, 0
+      -1f, -1f, 0,    0, 0,
+      1f, -1f, 0,    1f, 0
       };
 
     
@@ -102,8 +102,9 @@ public class Filter implements RenderingPass, Semantic{
     float[] frame = {
       -1f, 1f, 0,   0, (float)width,
       1f, 1f, 0,    (float)width, (float)height,
-      1f, -1f, 0,    (float)height, 0,
-      -1f, -1f, 0,    0, 0};
+      -1f, -1f, 0,    0, 0,
+      1f, -1f, 0,    (float)height, 0
+    };
 
     
     gl.glBindBuffer(GL.GL_ARRAY_BUFFER, arraybuffer[0]);

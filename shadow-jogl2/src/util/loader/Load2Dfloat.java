@@ -30,7 +30,6 @@ public class Load2Dfloat extends Loader{
   }
   
   
-
   @Override
   public void loadOffsetLineValue
   (int lineoffset, float valueoffset) {
@@ -56,6 +55,7 @@ public class Load2Dfloat extends Loader{
     width = scanner[i].nextInt();
     height = scanner[i].nextInt();
   }
+
   
   public static ByteBuffer constructByteBuffer(ByteBuffer[] buffer){
     ByteBuffer result = ByteBuffer.allocate(buffer[0].capacity()*4);
@@ -71,8 +71,11 @@ public class Load2Dfloat extends Loader{
       }
     }
     result.rewind();
-    FloatBuffer fb = result.asFloatBuffer();
     return result;
   }
 
+  public float getfloat(int index){
+    return buffer.getFloat(index*4);
+  }
+  
 }

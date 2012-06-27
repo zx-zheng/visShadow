@@ -1,9 +1,10 @@
 package util.render.obj;
 
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 import javax.media.opengl.GL2;
-import javax.media.opengl.GL4bc;
+import javax.media.opengl.GL2GL3;
 
 import util.loader.PlyLoader;
 import util.render.Vec3;
@@ -14,17 +15,63 @@ import com.jogamp.opengl.util.PMVMatrix;
 public class Light extends Obj {
   public PMVMatrix pmmat;
   static PlyLoader obj = new PlyLoader("src/util/loader/ObjData/box.ply");
+  Vec3d color;
+  public double intensity;
+  public int[] attribute = new int[4]; 
   
   public Light(){
     pmmat = new PMVMatrix();
+    color = new Vec3d(1,1,1);
+    intensity = 1;
   }
   
-  public void init(GL4bc gl){
+  public Light(Vec3d color, double intensity, int[] attr){
+    pmmat = new PMVMatrix();
+    this.color = color;
+    this.intensity = intensity;
+    this.attribute = attr;
+  }
+  
+  public void init(GL2GL3 gl){
     obj.init(gl);
   }
   
-  public void rendering(GL4bc gl){
-    
+  public void rendering(GL2GL3 gl){
+    obj.rendering(gl);
+  }
+  
+  public void setcolor(Vec3d color){
+    this.color = color;
+  }
+  
+  public void setintensity(double intensity){
+    this.intensity = intensity;
+  }
+  
+  public void setattr(int[] attr){
+    for(int i = 0;i < 4; i++){
+      this.attribute[i] = attr[i];
+    }
+  }
+  
+  public void setattr(int index, int attr){
+    attribute[index] = attr;
+  }
+  
+  public FloatBuffer color(){
+    float[] color = {(float)this.color.x, 
+        (float)this.color.y, (float)this.color.z};
+    return FloatBuffer.wrap(color);
+  }
+  
+  public IntBuffer attr(){
+    return IntBuffer.wrap(attribute);
+  }
+  
+  public void move(GL2GL3 gl, PMVMatrix model){
+    model.glTranslatef(posx, posy, 6);
+    model.glRotatef(45, 0, 0, 1);
+    model.glScalef(0.1f, 0.1f, 0.1f);
   }
   
   public void lookat(float eyeX, float eyeY, float eyeZ, 
@@ -53,6 +100,7 @@ public class Light extends Obj {
   public void lookatd(double eyeX, double eyeY, double eyeZ, 
       double centerX, double centerY, double centerZ,
       double upX, double upY, double upZ){
+    posx = (float)eyeX; posy = (float)eyeY; posz = (float)eyeZ;
     Vec3d f = new Vec3d(centerX - eyeX, centerY - eyeY, centerZ - eyeZ);
     f.Nor();
     Vec3d U = new Vec3d(upX, upY, upZ);
@@ -89,6 +137,7 @@ public class Light extends Obj {
       float zNear,
       float zFar){
     pmmat.glMatrixMode(GL2.GL_PROJECTION);
+    pmmat.glLoadIdentity();
     pmmat.glOrthof(left, right, bottom, top, zNear, zFar);
     pmmat.update();
   }

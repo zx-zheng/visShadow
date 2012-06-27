@@ -1,4 +1,6 @@
 
+import gui.Mainpanel;
+
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.event.KeyListener;
@@ -34,6 +36,7 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
       GLProfile glp = GLProfile.getDefault();
       // Specifies a set of OpenGL capabilities, based on your profile.
       GLCapabilities caps = new GLCapabilities(glp);
+      caps.setNumSamples(2); // enable anti aliasing - just as a example
       // Allocate a GLDrawable, based on your OpenGL capabilities.
       GLCanvas canvas = new GLCanvas(caps);
       //canvas = new GLCanvas(arg0, arg1);
@@ -85,6 +88,7 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
        awtDrawable.addMouseWheelListener(this);
        awtDrawable.addKeyListener(this);
      }
+     
    }
 
    int count = 0;
@@ -98,15 +102,15 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
      sr.rendering(gl);
      if(nFrame++ > 200) {
        if(nLastUpdate != 0) {
-   long nTimeMS = System.currentTimeMillis() - nLastUpdate ;
-   System.out.println(nFrame + " in " + nTimeMS + "msec (" +
-          nFrame * 1000 / nTimeMS + " FPS)") ;
+         long nTimeMS = System.currentTimeMillis() - nLastUpdate ;
+         System.out.println(nFrame + " in " + nTimeMS + "msec (" +
+             nFrame * 1000 / nTimeMS + " FPS)") ;
        } 
        nFrame = 0 ;
        nLastUpdate = System.currentTimeMillis() ;
      }
    }
-   
+
    @Override
    public void reshape(GLAutoDrawable drawable, int x, int y, int w, int h) {
      // Your OpenGL codes to set up the view port, projection mode and view volume. 
@@ -132,7 +136,6 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
 
   @Override
   public void keyPressed(java.awt.event.KeyEvent arg0){
-    // TODO Auto-generated method stub
     sr.keyPressed(arg0);
   }
 
