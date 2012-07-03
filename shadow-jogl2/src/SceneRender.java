@@ -1,4 +1,4 @@
-import gui.Mainpanel;
+import gui.Ctrlpanel;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -96,6 +96,12 @@ public class SceneRender{
         "src/ShadowMapping/ctrl.c", "src/util/render/Shadowmap/eval.c", "src/ShadowMapping/geom.c",
         "src/ShadowMapping/frag.c");
     shadowmappingtess.init(gl);
+    
+    shadowmappingtess.adduniform(gl, "shadowswitch", 1);
+    Ctrlpanel.getInstance().adduniformcheckbox("shadow", true, "shadowswitch", shadowmappingtess);
+    
+    shadowmappingtess.adduniform(gl, "L", 70);
+    Ctrlpanel.getInstance().adduniformslider(0, 100, 70, "L", shadowmappingtess);
     
     //TexImage img = TexImageUtil.loadImage("original1.png", 3, TexImage.TYPE_BYTE);
     tex = new Tex2D(GL2.GL_RGBA, GL2.GL_RGBA,
@@ -242,7 +248,7 @@ public class SceneRender{
     scene.iterate();
     //fxaa.filtering(gl, tbs, null);
     if(switched){
-      scene.shader1i(gl, shadowswitch, "shadowswitch");
+      //scene.shader1i(gl, shadowswitch, "shadowswitch");
       scene.shader1f(gl, gamma, "gamma");
 //      scene.shader1f(gl, border, "border");
 //      scene.shadowmapshader1f(gl, border, "border");

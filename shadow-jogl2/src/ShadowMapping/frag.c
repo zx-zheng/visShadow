@@ -13,6 +13,7 @@ uniform ivec2 lightcount_real_virtual;
 uniform sampler2DArray shadowmap;
 uniform sampler2D weatherTex;
 uniform float gamma;
+uniform int L;
 
 in geom{
   vec4 worldpos;
@@ -91,7 +92,7 @@ vec3 valuetoshadowcolorRGshadeBY(float value, float shadewide, float shadow){
   Color Red-Green  Shade Blue-Yellow+L
  *-----------------------------------------------------------------*/
 vec3 valuetoshadowcolorRGshadeBYL(float value, float shadewide, float shadow){
-  float l = 70 + shadewide *15*1*1 - 30*(1-shadow) * 1, 
+  float l = L + shadewide *15*1*1 - 30*(1-shadow) * 1, 
     a = (value-0.5)* 90 * 1, b = 1*40*shadewide * 1;
   vec3 xyz = LabtoXYZ(l,a,b);
   //return vec3(l/100);
@@ -228,7 +229,7 @@ void main(){
   float ratio = 0.5;
   float uplightshade = dot(Geom.normal, vec3(0,0,1));
 
-  if(shadowswitch == 1)shadow = 1;
+  if(shadowswitch == 0)shadow = 1;
   //if (Geom.hswitch == 1)shadow = 1;
   
   //Color = vec4(color * (shade * (0.3 * shadow + 0.4) + 0.3) , 1);

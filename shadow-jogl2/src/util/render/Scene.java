@@ -434,8 +434,12 @@ public abstract class Scene implements RenderingPass {
   public void shader1i(GL2GL3 gl, int i, String name){
     shader.use(gl);
     gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), name),i);
+    //gl.glUniform(new GLUniformData(name, i));
     shadertess.use(gl);
     gl.glUniform1i(gl.glGetUniformLocation(shadertess.getID(), name),i);
+    //GLUniformData tmp = new GLUniformData(name, i);
+    //tmp.setLocation(gl.glGetUniformLocation(shadertess.getID(), name));
+    //gl.glUniform(tmp);
     shadertess.unuse(gl);
   }
   
