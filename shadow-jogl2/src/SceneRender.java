@@ -101,7 +101,21 @@ public class SceneRender{
     Ctrlpanel.getInstance().adduniformcheckbox("shadow", true, "shadowswitch", shadowmappingtess);
     
     shadowmappingtess.adduniform(gl, "L", 70);
-    Ctrlpanel.getInstance().adduniformslider(0, 100, 70, "L", shadowmappingtess);
+    Ctrlpanel.getInstance().adduniformslider(0, 100, 70, "ground L", "L", shadowmappingtess);
+    
+    shadowmappingtess.adduniform(gl, "lab_a", 90);
+    Ctrlpanel.getInstance().adduniformslider(0, 170, 90, "ground color", "lab_a", shadowmappingtess);
+    
+    shadowmappingtess.adduniform(gl, "lab_b", 10);
+    Ctrlpanel.getInstance().adduniformslider(0, 150, 10, "shade lab_b", "lab_b", shadowmappingtess);
+    
+    shadowmappingtess.adduniform(gl, "shaderange", 15);
+    Ctrlpanel.getInstance().adduniformslider(0, 50, 15, "shade range", "shaderange", shadowmappingtess);
+    
+    shadowmappingtess.adduniform(gl, "shadowrange", 30);
+    Ctrlpanel.getInstance().adduniformslider(0, 100, 30, "shadow range", "shadowrange", shadowmappingtess);
+    
+    
     
     //TexImage img = TexImageUtil.loadImage("original1.png", 3, TexImage.TYPE_BYTE);
     tex = new Tex2D(GL2.GL_RGBA, GL2.GL_RGBA,

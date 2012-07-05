@@ -14,6 +14,7 @@ import javax.swing.event.ChangeListener;
 
 import util.gl.Shader;
 import util.gl.TexUnitManager;
+import util.render.Scene;
 
 
 public class Ctrlpanel implements ChangeListener, ItemListener{
@@ -23,15 +24,9 @@ public class Ctrlpanel implements ChangeListener, ItemListener{
     return Ctrlpanel.instance;
   }
   JPanel panel = new JPanel();
-  ArrayList<JComponent> list = new ArrayList<JComponent>();
+  //ArrayList<JComponent> list = new ArrayList<JComponent>();
   public Ctrlpanel(){
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-//    JSlider slider = new JSlider();
-//    slider.addChangeListener(this);
-//    UniformJCheckBox cbox = new UniformJCheckBox("test", true); 
-//    cbox.addItemListener(this);
-//    panel.add(slider);
-//    panel.add(cbox);
   }
   
   public JPanel getPanel(){
@@ -45,8 +40,13 @@ public class Ctrlpanel implements ChangeListener, ItemListener{
     panel.add(cbox);
   }
   
-  public void adduniformslider(int min, int max, int value, String name,Shader shader){
-    JLabel label = new JLabel(name);
+  public void addscenecheckbox(SceneJCheckBox cbox){
+    cbox.addItemListener(this);
+    panel.add(cbox);
+  }
+  
+  public void adduniformslider(int min, int max, int value, String text, String name,Shader shader){
+    JLabel label = new JLabel(text);
     panel.add(label);
     UniformJSlider slider= new UniformJSlider(min, max, value, name, shader);
     slider.addChangeListener(this);
@@ -66,6 +66,8 @@ public class Ctrlpanel implements ChangeListener, ItemListener{
     Object source = e.getItemSelectable();
     if(source.getClass() == new UniformJCheckBox().getClass()){
       ((UniformJCheckBox)source).select(e);
+    }else if(source.getClass() == new SceneJCheckBox().getClass()){
+      ((SceneJCheckBox)source).select(e);
     }
   }
   

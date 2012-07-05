@@ -1,3 +1,6 @@
+import gui.Ctrlpanel;
+import gui.SceneJCheckBox;
+
 import java.nio.FloatBuffer;
 
 import javax.media.opengl.*;
@@ -32,6 +35,7 @@ public class Scene1 extends Scene {
       new Load2Dfloat(filepath+"VofWind_10.0m_T0.txt");
   FloatBuffer datafb;
   float windspeedmax;
+  SceneJCheckBox textureshadow;
   
   public Scene1(){
     super();
@@ -52,6 +56,8 @@ public class Scene1 extends Scene {
     windspeedv.load();
     windspeedmax = windspeedmax();
     datafb = data.getbuffer().asFloatBuffer();
+    textureshadow = new SceneJCheckBox("texture shadow", true);
+    Ctrlpanel.getInstance().addscenecheckbox(textureshadow);
   }
   
   private float windspeedmax(){
@@ -71,7 +77,7 @@ public class Scene1 extends Scene {
   
   public void scene(GL2GL3 gl, Shader shader, boolean show) {
     //湿度
-    if(show & true){
+    if(show & textureshadow.state){
       model.glLoadIdentity();
       model.glTranslatef(0, 0, 40);
       //model.glPushMatrix();
