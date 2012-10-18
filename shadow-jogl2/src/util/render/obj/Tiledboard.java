@@ -13,6 +13,16 @@ public class Tiledboard extends Obj implements Semantic{
   int vao[] = new int[1];
   public double leftdownx, leftdowny, width, height;
   
+  //原点中心　幅、高さ指定
+  public Tiledboard(double width, double height, int divide){
+    this.wdivide = divide;
+    this.leftdownx = -width / 2; this.leftdowny = -height / 2;
+    this.width = width; this.height = height;
+    genVertices((float) leftdownx, (float) leftdowny, 0, 
+        (float) width, (float) height, divide, divide);
+  }
+  
+  //４点指定
   public Tiledboard(float leftdownx, float leftdowny,  float z,
       float width, float height, int wdivide, int hdivide){
     this.wdivide = wdivide; this.hdivide = hdivide;

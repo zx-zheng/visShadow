@@ -31,6 +31,7 @@ import javax.media.opengl.awt.GLJPanel;
 
 import com.jogamp.opengl.util.FPSAnimator;
 
+import scene.SceneRender;
 import util.gl.*;
 
 /*

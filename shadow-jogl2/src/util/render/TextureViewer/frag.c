@@ -18,6 +18,6 @@ void main(){
   }else if(mode == 1){
     Color = 
       vec4(vec3(texture(targetarray, 
-			vec3(Vert.texcoord, 4)).y), 1);
+			vec3(Vert.texcoord, 0)).y), 1);
   }
 }

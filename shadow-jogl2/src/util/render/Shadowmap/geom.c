@@ -10,6 +10,7 @@ uniform ivec2 lightcount_real_virtual;
 out geom{
   vec4 worldpos;
   float z;
+  flat int layers;
 }Geom;
 
 void main(){
@@ -20,6 +21,7 @@ void main(){
       Geom.worldpos = worldpostmp;
       gl_Position = lightsproj[layer] * worldpostmp;
       Geom.z = gl_Position.z/gl_Position.w;
+      Geom.layers = layer;
       EmitVertex();
     }
     EndPrimitive();

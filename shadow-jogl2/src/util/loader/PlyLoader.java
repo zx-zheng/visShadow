@@ -38,7 +38,7 @@ public class PlyLoader extends Loader implements Semantic{
     }
     //System.out.println(line);
     linetmp = line.substring("element vertex".length()).split(" ");
-    System.out.println(linetmp[1]);
+    //System.out.println(linetmp[1]);
     totalvertex = Integer.parseInt(linetmp[1]);
 
 
@@ -69,16 +69,16 @@ public class PlyLoader extends Loader implements Semantic{
         break;
     }
 
-    System.out.println("vertex:" + totalvertex + 
-        "\nproperty:" + totalproperty + 
-        "\nface:" + totalface); 
-    System.out.println(line); 
+//    System.out.println("vertex:" + totalvertex + 
+//        "\nproperty:" + totalproperty + 
+//        "\nface:" + totalface); 
+//    System.out.println(line); 
   }
 
   private void readvertex(){
     String[] splited;
     vertex = FloatBuffer.allocate(totalvertex * totalproperty * 4);
-    System.out.println(vertex.capacity());
+    //System.out.println(vertex.capacity());
 
     for(int i = 0; i < totalvertex; i++){
       line = scanner[0].next();
@@ -128,7 +128,7 @@ public class PlyLoader extends Loader implements Semantic{
 
   public void init(GL2GL3 gl){
     if(!inited){
-      System.out.println("init Ply loader");
+      //System.out.println("init Ply loader");
       readheader();
       readvertex();
       readface();

@@ -15,6 +15,11 @@ public class TexViewer extends Filter{
         "src/util/render/TextureViewer/frag.c");
   }
   
+  public TexViewer(String fsource){
+    super("src/util/render/TextureViewer/vert.c",
+        fsource);
+  }
+  
   @Override
   public void init(GL2GL3 gl){
     System.out.println("Init Texture viewer");

@@ -7,9 +7,11 @@ layout(location = FRAG_COLOR, index = 0) out vec4 Color;
 in geom{
   vec4 worldpos;
   float z;
+  flat int layers;
 }Geom;
 
 void main(){
   Color = vec4(abs(Geom.worldpos.z),
 	       Geom.z * 0.5 + 0.5, 1, 0);
+  //Color = vec4(Geom.layers);
 }

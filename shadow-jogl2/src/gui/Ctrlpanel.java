@@ -1,10 +1,15 @@
 package gui;
 
+import java.awt.Dimension;
+import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -17,7 +22,7 @@ import util.gl.TexUnitManager;
 import util.render.Scene;
 
 
-public class Ctrlpanel implements ChangeListener, ItemListener{
+public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   
   private static Ctrlpanel instance = new Ctrlpanel();
   public static Ctrlpanel getInstance(){
@@ -52,6 +57,36 @@ public class Ctrlpanel implements ChangeListener, ItemListener{
     slider.addChangeListener(this);
     panel.add(slider);
   }
+  
+  public void addLightCtrl(int count, Scene scene){
+    addComboBox("light", count);
+    JPanel lightpanel = new JPanel();
+    lightpanel.add(new JLabel("pos"));
+    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posx)));
+    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posy)));
+    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posz)));
+    panel.add(lightpanel);
+  }
+  
+  public void addComboBox(String text, int count){
+    String[] index = new String[count];
+    for(int i=0;i<count;i++){
+      index[i]=String.valueOf(i);
+    }
+    JLabel label = new JLabel(text);
+    panel.add(label);
+    JComboBox combobox = new JComboBox(index);
+    combobox.setPreferredSize(new Dimension(100, 50));
+    combobox.addActionListener(this);
+    panel.add(combobox);
+  }
+  
+  public void addSlider(JSlider slider, String text) {
+    JLabel label = new JLabel(text);
+    panel.add(label);
+    slider.addChangeListener(this);
+    panel.add(slider);
+  }
 
   @Override
   public void stateChanged(ChangeEvent e){
@@ -69,6 +104,12 @@ public class Ctrlpanel implements ChangeListener, ItemListener{
     }else if(source.getClass() == new SceneJCheckBox().getClass()){
       ((SceneJCheckBox)source).select(e);
     }
+  }
+
+  @Override
+  public void actionPerformed(ActionEvent arg0){
+    // TODO Auto-generated method stub
+    
   }
   
 }

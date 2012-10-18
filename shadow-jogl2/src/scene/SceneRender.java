@@ -1,3 +1,4 @@
+package scene;
 import gui.Ctrlpanel;
 
 import java.awt.event.KeyEvent;
@@ -42,7 +43,12 @@ public class SceneRender{
   Load2Dfloat loader;
   float gamma = 1, border = 0, heightscale = 0.05f;
   
+  private int prevMouseX, prevMouseY;
+  
+  GLTimer timer = new GLTimer();
+  
   public void init(GL2GL3 gl){
+    timer.init(gl);
     
     smapfbo = new FBO(gl);
     
@@ -52,10 +58,15 @@ public class SceneRender{
     fxaa = new Filter("src/util/render/FXAA/vert.c", "src/util/render/FXAA/frag.c");
     fxaa.init(gl);
     
-    initWeatherData(gl);
+    //String filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
+    String filepath = "/home/michael/zheng/Programs/WeatherData/2009100818/";
+    //String filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
+    
+    initWeatherData(gl, filepath);
     //initTestData(gl);
     
     scene = new Scene1();
+    scene.initfile(filepath);
     scene.initShadowmap(gl, 2, SHADOWMAPWIDTH, SHADOWMAPHEIGHT);
     for(int i = 0; i < scene.lightCount(); i++){
       scene.lights.get(i).init(gl);
@@ -130,13 +141,15 @@ public class SceneRender{
     initshadowmapping(gl, shadowmapping, shadowmappingtess);
     
     //scene.updateligths(gl, shadowmapping);
-    scene.init(gl, shadowmapping, shadowmappingtess);
     scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
     //scene.perspectivef(50, 1, 1f, 30f);
     scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
+    //initの場所はあとで調整
+    scene.init(gl, shadowmapping, shadowmappingtess);
+    scene.setPROJ_SCALE(projsize * 2);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
-    scene.setTessLevel(gl, 8);
+    scene.setTessLevel(gl, 1);
     //円柱オフ
     scene.shader1i(gl, 0, "offheight");
        
@@ -145,9 +158,8 @@ public class SceneRender{
     fbo.attachDepthRBO(gl, 1024, 1024);
     //*/
   }
-  private void initWeatherData(GL2GL3 gl){
-    String filepath = "/home/michael/zheng/Programs/WeatherData/2009100812/";
-//    String filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
+  private void initWeatherData(GL2GL3 gl, String filepath){
+    
     loader = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt",
         filepath + "Temperature_2.0m_T0.txt",
         filepath + "UofWind_10.0m_T0.txt",
@@ -176,22 +188,6 @@ public class SceneRender{
     ByteBuffer[] splarray = {spl0.getSpline(),spl1.getSpline(),
         spl2.getSpline(),spl3.getSpline()};
     ByteBuffer buffer = Load2Dfloat.constructByteBuffer(splarray);
-    
-    //面を格子状にする
-//    int gridwidth = 10, gridinterval = 5;
-//    for(int i = 0; i < spl0.height()-gridinterval;i+=gridwidth*2){
-//      for(int k = 0; k < gridinterval;k++){
-//        for(int j = 0; j < spl0.width();j++){
-//          buffer.putFloat(16*spl0.width()*(i+k)+16*j+4*2, 0);
-//          buffer.putFloat(16*spl0.width()*(i+k)+16*j+4*3, 0);
-//        } } }
-//    
-//    for(int i = 0; i < spl0.height();i++){
-//      for(int k = 0; k < spl0.width()-gridinterval;k+=gridwidth*2){
-//        for(int j = 0; j < gridinterval;j++){
-//          buffer.putFloat(16*spl0.width()*i+16*(k+j)+4*2, 0);
-//          buffer.putFloat(16*spl0.width()*i+16*(k+j)+4*3, 0);
-//        } } }
     
     Tex2D weatherTex = new Tex2D(GL2.GL_RGBA16F, GL2.GL_RGBA, 
         GL.GL_FLOAT, spl0.width(), spl0.height(), 
@@ -250,13 +246,21 @@ public class SceneRender{
   public void rendering(GL2GL3 gl){
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
     gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
-    scene.ShadowMap(gl,true);
+    
+    //timer.start(gl);
+    scene.ShadowMap(gl, true); 
+    //System.out.println(timer.stop(gl));
+    
     texviewer.rendering(gl, scene.getShadowmapTexture(), 1024, 0, 640, 640);
     //texviewer.rendering(gl, tbs, 1024, 0, 640, 640);
     //texviewer.rendering(gl, tbs, 640, 0, 640, 640);
     gl.glFlush();
+    
+    //timer.start(gl);
     scene.renderingToWindow(gl, viewport[0], viewport[1], 
         viewport[2], viewport[3], false);
+    //System.out.println(timer.stop(gl));
+
 //    scene.renderingToFBO(gl, fbo, viewport[0], viewport[1], 
 //        viewport[2], viewport[3]);
     scene.iterate();
@@ -275,7 +279,7 @@ public class SceneRender{
   }
   
   public void mouseDragged(MouseEvent e){
-    if(javax.swing.SwingUtilities.isLeftMouseButton(e)){
+    if(javax.swing.SwingUtilities.isRightMouseButton(e)){
       int x = e.getX();
       int y = e.getY();
       //java.awt.Dimension size = e.getComponent().getSize();
@@ -283,6 +287,12 @@ public class SceneRender{
       mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, heightctrl);
       border = (float)y/(float)viewport[3]-0.1f;
       switched = true;
+    }else if(javax.swing.SwingUtilities.isLeftMouseButton(e)){
+      int x = e.getX(), y = e.getY();
+      int movex = x - prevMouseX, movey = y - prevMouseY;
+      prevMouseX = x; prevMouseY = y;
+      scene.moveCenter(movex, movey, viewport[2], viewport[3]);
+      //System.out.println(movex + " " + movey);
     }
   }
   
@@ -290,9 +300,16 @@ public class SceneRender{
       Load2Dfloat data, Tiledboard board, boolean heightctrl){
     posx = (proj[1] - proj[0])/viewport[2] * (x-viewport[0])+ proj[0];
     posy = (-proj[3] + proj[2])/viewport[3] * (y-viewport[1]) + proj[3];
+    System.out.println("light " + posx + " " + posy);
+    //scene.setlightpos(0, (float)posx, (float)posy);
+    double rad = Math.acos(posx/Math.sqrt(posx * posx + posy * posy));
+    if(posy < 0) rad = 2 * Math.PI - rad;
+    double r = Math.sqrt(32);
+    scene.setlightpospolar(0, r, rad);
+    scene.setlightdirectionrotate(rad);
     //高さ自動調整
-    float heighttmp=0;
-    if(heightctrl)heighttmp = mouseToHeight(posx, posy, data, board);
+    //float heighttmp=0;
+    //if(heightctrl)heighttmp = mouseToHeight(posx, posy, data, board);
     //scene.setLightCircleLookOutside(posx,posy,height+heighttmp,angle,1,1,scene.lightCount());
     posx = (double)x/viewport[2]*2*Math.PI;
     posx = 2*Math.PI*0.8;
@@ -365,12 +382,12 @@ public class SceneRender{
   }
   
   public void mousePressed(MouseEvent e){
-    // TODO Auto-generated method stub
     if ((e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0)rightclicking = true;
+    prevMouseX = e.getX();
+    prevMouseY = e.getY();
   }
 
   public void mouseReleased(MouseEvent e){
-    // TODO Auto-generated method stub
     if ((e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0) rightclicking = false;
   }
   

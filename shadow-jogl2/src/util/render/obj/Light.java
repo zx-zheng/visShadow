@@ -14,6 +14,7 @@ import com.jogamp.opengl.util.PMVMatrix;
 
 public class Light extends Obj {
   public PMVMatrix pmmat;
+  public double centerx,centery,centerz, upx, upy, upz;
   static PlyLoader obj = new PlyLoader("src/util/loader/ObjData/box.ply");
   Vec3d color;
   public double intensity;
@@ -78,6 +79,8 @@ public class Light extends Obj {
       float centerX, float centerY, float centerZ,
       float upX, float upY, float upZ){
     posx = eyeX; posy = eyeY; posz = eyeZ;
+    centerx = centerX; centery = centerY; centerz = centerZ;
+    upx = upX; upy = upY; upz = upZ;
     Vec3 f = new Vec3(centerX - eyeX, centerY - eyeY, centerZ - eyeZ);
     f.Nor();
     Vec3 U = new Vec3(upX, upY, upZ);
@@ -101,6 +104,8 @@ public class Light extends Obj {
       double centerX, double centerY, double centerZ,
       double upX, double upY, double upZ){
     posx = (float)eyeX; posy = (float)eyeY; posz = (float)eyeZ;
+    centerx = centerX; centery = centerY; centerz = centerZ;
+    upx = upX; upy = upY; upz = upZ;
     Vec3d f = new Vec3d(centerX - eyeX, centerY - eyeY, centerZ - eyeZ);
     f.Nor();
     Vec3d U = new Vec3d(upX, upY, upZ);
@@ -150,6 +155,10 @@ public class Light extends Obj {
   public FloatBuffer getMatrixf(int matrixName){
     pmmat.update();
     return pmmat.glGetMatrixf(matrixName);
+  }
+  
+  public void update(){
+    lookatd(posx, posy, posz, centerx, centery, centerz, upx, upy, upz);
   }
 
 }

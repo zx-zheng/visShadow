@@ -53,6 +53,7 @@ vec4 interpolate4(in vec4 v0, in vec4 v1, in vec4 v2, in vec4 v3)
 }
 
 float heightswitch(float x, float y,int rsl, int r, int d, float ratio){
+  return 0;
   int posx = int(x * rsl), posy = int(y * rsl);
   int rposx = posx % int((2*r+d)), rposy = posy % int((2*r+d)*ratio);
   int index =  (posx / int((2*r+d))*13 + posy / int((2*r+d)*ratio)*19) % 64;
@@ -96,17 +97,17 @@ void main(){
   float height = sqrt(pow(wdata.z, 2) + pow(wdata.w, 2)) * heightscale;
 
   float ratio = 201/145;
-  ///*
+  /*
   if(true){
     height *= heightswitch(x, y, 1024*64, int(200), 1200, 201.0/145.0);
   }else{
     height*=1;
     hswitch = 1;
   }
-  //*/
-  if(border > y)
-    height = 0;
-  gl_Position.xyz +=normal * height;
+  */
+  //if(border > y)
+  //height = 0;
+  //gl_Position.xyz +=normal * height;
   texcoord0 = gl_TessCoord.xy;
   Area = Ctrl[0].Area;
 }

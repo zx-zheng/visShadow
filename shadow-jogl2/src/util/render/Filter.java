@@ -18,6 +18,8 @@ public class Filter implements RenderingPass, Semantic{
   TexBindSet targetunit;
   FilterShader filter;
   
+  public Filter(){}
+  
   public Filter(String vsource, String fsource){
     this.vsource = vsource;
     this.fsource = fsource;

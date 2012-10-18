@@ -1,10 +1,13 @@
 package util.render;
 
+import gui.Ctrlpanel;
+
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 
 import javax.media.opengl.*;
+import javax.swing.JComboBox;
 
 import oekaki.util.*;
 
@@ -29,7 +32,7 @@ public abstract class Scene implements RenderingPass {
       smapgsrc = "src/util/render/Shadowmap/geom.c",
       smapfsrc = "src/util/render/Shadowmap/frag.c";
   
-  final TexUnitManager tum = TexUnitManager.getInstance();
+  private final TexUnitManager tum = TexUnitManager.getInstance();
   ObjManager om;
   public List<Light> lights = new ArrayList<Light>();
 
@@ -42,6 +45,8 @@ public abstract class Scene implements RenderingPass {
   uniformlightscolor, uniformlightscolortess,
   uniformlightsattr, uniformlightsattrtess;
   
+  protected float[] orthoproj;
+  
   public Scene(){
     pvmat = new PMVMatrix();
     model = new PMVMatrix();
@@ -51,12 +56,17 @@ public abstract class Scene implements RenderingPass {
     smapfbo = fbo;
   }
   
-  private void addLight(int i){
+  public void initLight(int i){
     realLightcount += i;
     for(int j = 0; j < i; j++){
       lights.add(new Light());
     }
     virtualLightcount = realLightcount;
+  }
+  
+  public Light getLight(int index){
+    if(index > realLightcount)return null;
+    return lights.get(index);
   }
   
   public int lightCount(){
@@ -85,7 +95,9 @@ public abstract class Scene implements RenderingPass {
   }
   
   public void initShadowmap(GL2GL3 gl, int lightcount, int width, int height){
-    addLight(lightcount);
+    initLight(lightcount);
+    
+    Ctrlpanel.getInstance().addLightCtrl(realLightcount, this);
     smapwidth = width;
     smapheight = height;
     
@@ -105,7 +117,7 @@ public abstract class Scene implements RenderingPass {
     
     /*シャドウマップ*/
     shadowmapshader = new Shader(
-        smapvsrc,
+        "src/util/render/Shadowmap/vertsimple.c",
         null,
         null,
         smapgsrc,        
@@ -246,6 +258,7 @@ public abstract class Scene implements RenderingPass {
         gl.glGetUniformLocation(shadowmapshader.getID(), "stage"),0);
     smapupdatelights(gl);
     scene(gl, shadowmapshader, show);
+    gl.glFlush();
     
     shadowmapshadertess.use(gl);
     gl.glUniform1i(
@@ -398,9 +411,16 @@ public abstract class Scene implements RenderingPass {
       float top,
       float zNear,
       float zFar){
+    orthoproj = new float[4];
+    orthoproj[0] = left; orthoproj[1] = right;
+    orthoproj[2] = bottom; orthoproj[3] = top;
     pvmat.glMatrixMode(GL2.GL_PROJECTION);
     pvmat.glOrthof(left, right, bottom, top, zNear, zFar);
     pvmat.update();
+  }
+  
+  public float[] orthoproj() {
+    return orthoproj;
   }
   
   public void updateModelMatrix(GL2GL3 gl, Shader shader, PMVMatrix model){

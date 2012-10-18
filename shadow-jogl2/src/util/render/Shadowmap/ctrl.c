@@ -2,7 +2,7 @@
 
 layout(vertices = 4) out;
 
-uniform int tesslevel;
+uniform int tesslevel = 1;
 
 in vert{
   vec3 Normal;
