@@ -2,6 +2,7 @@ package util.render;
 
 import gui.Ctrlpanel;
 
+import java.awt.event.ActionEvent;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
@@ -481,5 +482,7 @@ public abstract class Scene implements RenderingPass {
   public abstract void scenetess(GL3 gl, Shader shader, boolean show);
 
   public abstract void iterate();
+  
+  public void clickButton(ActionEvent e){}
 
 }

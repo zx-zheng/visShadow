@@ -1,22 +1,39 @@
 package scene;
 import gui.Ctrlpanel;
 import gui.SceneJCheckBox;
+import gui.UniformJSlider;
 
+import java.awt.event.ActionEvent;
+import java.awt.font.TextMeasurer;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import javax.media.opengl.*;
+import javax.swing.JButton;
 import javax.swing.JSlider;
 import javax.swing.plaf.SliderUI;
 
+import oekaki.util.Tex2D;
+import oekaki.util.TexImage;
+import oekaki.util.TexImageUtil;
+
 import util.gl.Shader;
+import util.gl.TexBindSet;
+import util.gl.TexUnitManager;
 import util.loader.Load2Dfloat;
 import util.loader.PlyLoader;
 import util.render.Scene;
 import util.render.obj.Light;
 import util.render.obj.Tiledboard;
 import za.co.luma.geom.Vector2DDouble;
+import za.co.luma.geom.Vector2DInt;
 import za.co.luma.math.function.ByteBufferFloat2Wrapper2D;
 import za.co.luma.math.function.List2Wrapper2D;
 import za.co.luma.math.function.RealFunction2DWrapper;
@@ -33,14 +50,22 @@ public class Scene1 extends Scene {
   PlyLoader tube = new PlyLoader("src/util/loader/ObjData/tube6.ply");
   PlyLoader ring = new PlyLoader("src/util/loader/ObjData/ring.ply");
 
+  private int VIEWPORTX, VIEWPORTY;
   //データの解像度
   private final int  GRID_SIZE_X = 201, GRID_SIZE_Y = 251;
   
   //データの間隔
   private final double GRID_INTERVAL_X = 0.25, GRID_INTERVAL_Y = 0.2,
       ASPECT_RATIO_Y_FOR_MAP = 0.7667;
+  
   public double PROJ_SCALE;
-  private float scaling;
+  private float viewscaling;
+  private final int INIT_MAP_SCALE_VALUE = 50;
+  private float MAP_ASPECT;
+  
+  private String PATH_TO_MAP;
+  
+  Shader viewmapshader;
   
   public Tiledboard tboard = 
       new Tiledboard(GRID_INTERVAL_X * GRID_SIZE_X, 
@@ -57,14 +82,23 @@ public class Scene1 extends Scene {
   Load2Dfloat windspeedv;
   
   FloatBuffer datafb;
+  
   float windspeedmax;
+  
   SceneJCheckBox textureshadow;
   JSlider possioninterval, viewdscale;
+  JButton savemapconf, loadmapconf;
+  
   private int currentinterval = 0, currentscale = 0;
-  private Vector2DDouble viewcenter = new Vector2DDouble(0, 0),
-      prevviewcenter = new Vector2DDouble(0, 0);
+  
+  private Vector2DDouble viewcenter = new Vector2DDouble(0, 0);
+  private Vector2DDouble mapoffset = new Vector2DDouble(0, 0);
+  UniformJSlider mapscaleslider;
+  
   private float cylinderscale = 0;
   private float lightdirectionrotate = 45;
+  
+  public TexBindSet mapTex;
   
   List<Vector2DDouble> possion2;
   
@@ -74,29 +108,38 @@ public class Scene1 extends Scene {
   
   public void setPROJ_SCALE(double x){
     PROJ_SCALE = x / (GRID_INTERVAL_X * GRID_SIZE_X);
-    scaling =  (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
+    //viewscaling =  (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
   }
   
   //中心の移動 x,yはピクセル単位
   public void moveCenter(int x, int y, int viewportx, int viewporty){
+    //画面座標から世界座標に変換
     double pixeltoworldcoordx = 
         (double) x / (double) viewportx 
-        * Math.abs(orthoproj[1] - orthoproj[0]) / scaling;
+        * Math.abs(orthoproj[1] - orthoproj[0]) / viewscaling;
     double pixeltoworldcoordy = 
         (double) y / (double) viewporty 
-        * Math.abs(orthoproj[3] - orthoproj[2]) / scaling;
-    //System.out.println(scaling);
-    //System.out.println(pixeltoworldcoordx);
+        * Math.abs(orthoproj[3] - orthoproj[2]) / viewscaling;
+
     viewcenter.x += pixeltoworldcoordx;
     viewcenter.y -= pixeltoworldcoordy;
+    
+    //シェーダーにviewのオフセットを転送
+    viewmapshader.setuniform("viewoffsetx", 
+        (float) (-viewcenter.x 
+            / (GRID_INTERVAL_X * GRID_SIZE_X)));
+    viewmapshader.setuniform("viewoffsety", 
+        (float) (viewcenter.y 
+            / (GRID_INTERVAL_Y * GRID_SIZE_Y / MAP_ASPECT)));
+    
     nochangeframe = 0;
   }
   
   public void initfile(String filepath){
     windspeedu = 
-        new Load2Dfloat(filepath+"UofWind_10.0m_T0.txt");
+        new Load2Dfloat(filepath + "UofWind_10.0m_T0.txt");
     windspeedv = 
-        new Load2Dfloat(filepath+"VofWind_10.0m_T0.txt");
+        new Load2Dfloat(filepath + "VofWind_10.0m_T0.txt");
     windspeedu.load();
     windspeedv.load();
     windspeedmax = windspeedmax();
@@ -116,6 +159,114 @@ public class Scene1 extends Scene {
         new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0, 1);
   }
   
+  public void setmapTex(GL2GL3 gl, String pathToImage, Shader shader){
+     TexImage mapimage = TexImageUtil.loadImage(pathToImage, 3, 
+         TexImage.TYPE_BYTE);
+     PATH_TO_MAP = pathToImage;
+     MAP_ASPECT = (float) mapimage.width / (float) mapimage.height;
+     if(mapTex != null){
+       mapTex.unbind(gl);
+     }
+     Tex2D maptexture = new Tex2D(GL2.GL_RGB, GL2.GL_BGR,
+         GL.GL_UNSIGNED_BYTE, mapimage.width, mapimage.height,
+         GL.GL_LINEAR, mapimage.buffer, "map");
+     maptexture.init(gl);
+     mapTex = new TexBindSet(maptexture);
+     mapTex.bind(gl);
+     shader.use(gl);
+     gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), "mapTex"), 
+         mapTex.texunit);
+     gl.glUniform1f(gl.glGetUniformLocation(shader.getID(), "aspect_Y"), 
+         MAP_ASPECT);
+     shader.unuse(gl);
+     loadMapProperties(PATH_TO_MAP);
+  }
+  
+  @Override
+  public void clickButton(ActionEvent e){
+    Object src = e.getSource();
+    if (src == savemapconf) {
+      saveMapProperties(PATH_TO_MAP);
+    } else if (src == loadmapconf) {
+      loadMapProperties(PATH_TO_MAP);
+    }
+  }
+  
+  public void loadMapProperties(String pathtomap){
+    Properties conf = new Properties();
+    try {
+      InputStream inputStream = 
+          new FileInputStream(new File(pathtomap + ".properties"));
+      conf.load(inputStream);
+      
+      int scalevalue = (int) (INIT_MAP_SCALE_VALUE * 
+          Double.parseDouble(conf.getProperty("SCALE", 
+              String.valueOf(INIT_MAP_SCALE_VALUE))));
+      mapoffset.x = 
+          Double.parseDouble(conf.getProperty("OFFSET_X", "0"));
+      mapoffset.y = 
+          Double.parseDouble(conf.getProperty("OFFSET_Y", "0"));
+      mapscaleslider.setValue(scalevalue);
+      applyMapCenter(viewmapshader);
+    } catch (IOException e) {
+      System.out.println("No properties file for " + pathtomap);
+    }
+  }
+  
+  public void saveMapProperties(String pathtomap){
+    File conf = new File(pathtomap + ".properties");
+    try{
+      FileWriter fw = new FileWriter(conf);
+      double scale = (double) mapscaleslider.getValue() / INIT_MAP_SCALE_VALUE;
+      fw.write("SCALE = " + Double.toString(scale) + "\n");
+      fw.write("OFFSET_X = " + Double.toString(mapoffset.x) + "\n");
+      fw.write("OFFSET_Y = " + Double.toString(mapoffset.y) + "\n");
+      fw.close();
+    }catch(IOException e){
+      e.printStackTrace();
+      System.out.println("Fail to save file");
+    }
+  }
+  
+  public void setmapgui(GL2GL3 gl, Shader shader){
+    shader.adduniform(gl, "mapscaling", 50);
+    mapscaleslider = new UniformJSlider(0, 500, INIT_MAP_SCALE_VALUE, 
+        "mapscaling", shader);
+    Ctrlpanel.getInstance().addJSlider("MapScale", mapscaleslider);
+    shader.adduniform(gl, "mapoffsetx", 0f);
+    shader.adduniform(gl, "mapoffsety", 0f);
+    
+    shader.adduniform(gl, "viewoffsetx", 0f);
+    shader.adduniform(gl, "viewoffsety", 0f);
+    
+    shader.adduniform(gl, "viewscaling", viewscaling);
+    
+    savemapconf = new JButton("Save");
+    Ctrlpanel.getInstance().addButton(savemapconf);
+    loadmapconf = new JButton("Load");
+    Ctrlpanel.getInstance().addButton(loadmapconf);
+  }
+  
+  public void adjustMapCenter(Shader shader, int x, int y, 
+      int viewportx, int viewporty){
+    VIEWPORTX = viewportx; VIEWPORTY = viewporty;
+    viewmapshader = shader;
+    double currentmapscale = 
+        (double) mapscaleslider.getValue() / (double) INIT_MAP_SCALE_VALUE;
+    double viewscalefactor = viewscaling/ PROJ_SCALE;
+    mapoffset.x += x * currentmapscale / (viewportx * viewscalefactor);
+    mapoffset.y += y * currentmapscale / (viewporty * viewscalefactor)
+        * MAP_ASPECT;
+    applyMapCenter(shader);
+  }
+  
+  private void applyMapCenter(Shader shader){
+    shader.setuniform("mapoffsetx", 
+        (float) (-mapoffset.x));
+    shader.setuniform("mapoffsety", 
+        (float) (-mapoffset.y));
+  }
+  
   @Override
   public void init(GL2GL3 gl, Shader shader, Shader shadertess){
     // TODO Auto-generated method stub
@@ -128,6 +279,7 @@ public class Scene1 extends Scene {
     plus.init(gl);
     tube.init(gl);
     ring.init(gl);
+    Ctrlpanel.getInstance().scene = this;
     textureshadow = new SceneJCheckBox("texture shadow", false);
     Ctrlpanel.getInstance().addscenecheckbox(textureshadow);
     possioninterval = new JSlider(10, 60, 40);
@@ -135,6 +287,13 @@ public class Scene1 extends Scene {
     viewdscale = new JSlider(1, 20, 1);
     Ctrlpanel.getInstance().addSlider(viewdscale, "Scale");
     possioninterval(intervaltopossion(currentinterval));
+
+    viewmapshader = shadertess;
+    
+    setmapgui(gl, shadertess);
+    setmapTex(gl, 
+        "resources/testmap.png",
+        shadertess);
   }
   
   
@@ -142,11 +301,11 @@ public class Scene1 extends Scene {
     //System.out.println("possion start");
     //intervalはsliderの0.01倍
     PoissonDiskSampler pds = 
-        new PoissonDiskSampler(orthoproj[0] / scaling - viewcenter.x,
-            orthoproj[2] / scaling + viewcenter.y, 
-            orthoproj[1] / scaling - viewcenter.x, 
-            orthoproj[3] / scaling  + viewcenter.y, 
-            interval / scaling, func);
+        new PoissonDiskSampler(orthoproj[0] / viewscaling - viewcenter.x,
+            orthoproj[2] / viewscaling + viewcenter.y, 
+            orthoproj[1] / viewscaling - viewcenter.x, 
+            orthoproj[3] / viewscaling  + viewcenter.y, 
+            interval / viewscaling, func);
 
     possion2 = pds.sample();
     //System.out.println("possion end");
@@ -233,7 +392,7 @@ public class Scene1 extends Scene {
       //System.out.println(value);
       //System.out.println(pos.x + " " + pos.y);
       //拡大
-      model.glScalef(scaling, scaling, 1);
+      model.glScalef(viewscaling, viewscaling, 1);
       //移動
       //y成分に一時的にマイナスをつけてごまかす
       model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
@@ -244,7 +403,7 @@ public class Scene1 extends Scene {
           0.3f * cylinderscale * value * 7, 
           cylinderscale * value * 0.9f * 70);
       //縮小
-      model.glScalef(1f/scaling, 1f/scaling, 1);
+      model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
       model.glRotatef(lightdirectionrotate - 90, 0, 0, 1);
       updateModelMatrix(gl, shader, model);
       tube.rendering(gl);
@@ -357,7 +516,7 @@ public class Scene1 extends Scene {
     // TODO Auto-generated method stub
     model.glLoadIdentity();
     model.glRotatef(-0, 1, 0, 0);
-    model.glScalef(scaling, scaling, 1);
+    model.glScalef(viewscaling, viewscaling, 1);
     model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
     updateModelMatrix(gl, shader, model);
     //gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_LINE);
@@ -376,7 +535,8 @@ public class Scene1 extends Scene {
   public void iterate(){
     nochangeframe++;
     if(currentscale != viewdscale.getValue()){
-      scaling = (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
+      viewscaling = (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
+      viewmapshader.setuniform("viewscaling", (float) (1.0 / (viewdscale.getValue())));
       currentscale = viewdscale.getValue();
       nochangeframe = 0;
     }

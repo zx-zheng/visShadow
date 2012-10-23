@@ -11,15 +11,20 @@ uniform ivec4 lightsattr[10];
 uniform int divide,shadowswitch,colorset;
 uniform ivec2 lightcount_real_virtual;
 uniform sampler2DArray shadowmap;
-uniform sampler2D weatherTex;
+uniform sampler2D weatherTex, mapTex;
 uniform float gamma;
 uniform int L, lab_a, lab_b, shaderange, shadowrange;
+uniform float aspect_Y;
+uniform int mapscaling = 50;
+uniform float mapoffsetx, mapoffsety, viewoffsetx, viewoffsety;
+uniform float viewscaling = 1;
 
 in geom{
   vec4 worldpos;
   vec3 normal;
   vec2 texcoord0;
   vec2 Area;
+  vec2 screentexcoord;
   flat int hswitch;
 }Geom;
 
@@ -172,6 +177,15 @@ vec3 shadecmb(vec3 shade, vec3 shadecw, float shadewide){
   return color;
 }
 
+vec2 maptexcoordtransform(vec2 texcoord, float scale, 
+			  vec2 offset, vec2 viewoffset){
+  vec2 aspect = vec2(1, aspect_Y);
+  float scaling = mapscaling * 0.02;
+  //scaling = 1;
+  return texcoord  * aspect * 0.5 * scaling * viewscaling 
+    + offset + viewoffset * scaling + vec2(0.5);
+}
+
 void main(){
   mat4 bias = mat4(0.5, 0, 0, 0,
 		   0, 0.5, 0, 0,
@@ -237,13 +251,17 @@ void main(){
   //Color = vec4(color * (0.2 + shadow * 0.8 *shade + (1-shadow) * 0.2 * pow(shade, gamma)), 1);
   //Color = (0.2+0.8*shadow)*vec4(shadeRG(shadewide, color), 1);
   //Color = vec4(valRGshadeshadowYB(temperature, shadewide, shadow),1);
-  Color = vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow),1);
-  //Color=vec4(lightsattr[1].x);
+  Color = 0.5 * vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow),1);
   //Color = vec4(valRGshadeshadowYB(humid, shadewide, shadow),1);
   //Color = vec4(valRGYBshadeshadowYB(temperature, humid, shadewide, shadow),1);
   //Color = vec4((0.3+0.7*shade*shadow)* valuetocolorRG(temperature),1);
   //vec3 colorkw = shadeRG(shadewide, color);
   //vec3 colorstd = shade * color;
   //Color = (0.8+0.2*shadow)*vec4(shadecmb(colorstd, colorkw, shadewide),1);
-  //Color = vec4(color * (0.3 + shadow * 0.7 *shade),1);
+  Color += 0.5 * texture(mapTex, 
+		   maptexcoordtransform(Geom.screentexcoord, 1, 
+					vec2(mapoffsetx, mapoffsety),
+					vec2(viewoffsetx, viewoffsety)));
+
+  //Color = vec4( maptexcoordtransform(Geom.screentexcoord, 1, vec2(1)),0,1);
 }

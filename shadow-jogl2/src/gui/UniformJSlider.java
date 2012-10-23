@@ -17,6 +17,8 @@ public class UniformJSlider extends JSlider{
   ArrayList<String> uniformlist = new ArrayList<String>();
   ArrayList<Shader> shaderlist = new ArrayList<Shader>();
   
+  Function func;
+  
   public UniformJSlider(int min, int max, int value, String name, Shader shader){
     super(min, max, value);
     uniformlist.add(name);
@@ -30,7 +32,7 @@ public class UniformJSlider extends JSlider{
   }
   
   public void slide(ChangeEvent e){
-    int val = this.getValue();
+      int val = this.getValue();
     for(Shader shader : shaderlist){
       for(String name : uniformlist){
         shader.setuniform(name, val);

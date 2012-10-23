@@ -9,6 +9,7 @@ import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -30,6 +31,8 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   }
   JPanel panel = new JPanel();
   //ArrayList<JComponent> list = new ArrayList<JComponent>();
+  public Scene scene;
+  
   public Ctrlpanel(){
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
   }
@@ -37,6 +40,7 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   public JPanel getPanel(){
     return panel;
   }
+  
   
   public void adduniformcheckbox(String text, boolean selected,
       String name, Shader shader){
@@ -51,21 +55,25 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   }
   
   public void adduniformslider(int min, int max, int value, String text, String name,Shader shader){
+    UniformJSlider slider= new UniformJSlider(min, max, value, name, shader);
+    addJSlider(text, slider);
+  }
+  
+  public void addJSlider(String text, JSlider slider){
     JLabel label = new JLabel(text);
     panel.add(label);
-    UniformJSlider slider= new UniformJSlider(min, max, value, name, shader);
     slider.addChangeListener(this);
     panel.add(slider);
   }
   
   public void addLightCtrl(int count, Scene scene){
-    addComboBox("light", count);
-    JPanel lightpanel = new JPanel();
-    lightpanel.add(new JLabel("pos"));
-    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posx)));
-    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posy)));
-    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posz)));
-    panel.add(lightpanel);
+//    addComboBox("light", count);
+//    JPanel lightpanel = new JPanel();
+//    lightpanel.add(new JLabel("pos"));
+//    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posx)));
+//    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posy)));
+//    lightpanel.add(new TextField(String.valueOf(scene.getLight(0).posz)));
+//    panel.add(lightpanel);
   }
   
   public void addComboBox(String text, int count){
@@ -87,6 +95,11 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
     slider.addChangeListener(this);
     panel.add(slider);
   }
+  
+  public void addButton(JButton button){
+    button.addActionListener(this);
+    panel.add(button);
+  }
 
   @Override
   public void stateChanged(ChangeEvent e){
@@ -107,9 +120,9 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   }
 
   @Override
-  public void actionPerformed(ActionEvent arg0){
-    // TODO Auto-generated method stub
-    
+  public void actionPerformed(ActionEvent e){
+    if(scene != null)
+      scene.clickButton(e);
   }
   
 }

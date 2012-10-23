@@ -15,6 +15,7 @@ out geom{
   vec3 normal;
   vec2 texcoord0;
   vec2 Area;
+  vec2 screentexcoord; //(-1,-1):leftdown of screen (1,1):upright
   flat int hswitch;
 }Geom;
 
@@ -30,8 +31,9 @@ void main(){
     gl_Position = proj * view * Geom.worldpos;
     Geom.texcoord0 = texcoord0[i];
     Geom.Area = Area[i];
+    Geom.screentexcoord 
+      = vec2(gl_Position.x, -gl_Position.y) / gl_Position.w;
     EmitVertex();
   }
-  EndPrimitive();
-  
+  EndPrimitive();  
 }

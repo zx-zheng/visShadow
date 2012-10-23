@@ -98,7 +98,7 @@ public class SceneRender{
     
     shadowmapping = new Shader("src/ShadowMapping/vert.c",
         null, null, "src/ShadowMapping/geom.c",
-        "src/ShadowMapping/frag.c");
+        "src/ShadowMapping/fragsimple.c");
     shadowmapping.init(gl);
     shadowmapping.use(gl);
     
@@ -144,9 +144,10 @@ public class SceneRender{
     scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
     //scene.perspectivef(50, 1, 1f, 30f);
     scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
-    //initの場所はあとで調整
-    scene.init(gl, shadowmapping, shadowmappingtess);
+
     scene.setPROJ_SCALE(projsize * 2);
+  //initの場所はあとで調整
+    scene.init(gl, shadowmapping, shadowmappingtess);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
     scene.setTessLevel(gl, 1);
@@ -251,8 +252,8 @@ public class SceneRender{
     scene.ShadowMap(gl, true); 
     //System.out.println(timer.stop(gl));
     
-    texviewer.rendering(gl, scene.getShadowmapTexture(), 1024, 0, 640, 640);
-    //texviewer.rendering(gl, tbs, 1024, 0, 640, 640);
+    //texviewer.rendering(gl, scene.getShadowmapTexture(), 1024, 0, 640, 640);
+    texviewer.rendering(gl, scene.mapTex, 1024, 0, 640, 640);
     //texviewer.rendering(gl, tbs, 640, 0, 640, 640);
     gl.glFlush();
     
@@ -279,20 +280,17 @@ public class SceneRender{
   }
   
   public void mouseDragged(MouseEvent e){
+    int x = e.getX(), y = e.getY();
+    int movex = x - prevMouseX, movey = y - prevMouseY;
+    prevMouseX = x; prevMouseY = y;
     if(javax.swing.SwingUtilities.isRightMouseButton(e)){
-      int x = e.getX();
-      int y = e.getY();
-      //java.awt.Dimension size = e.getComponent().getSize();
-      //System.out.println("mouse" + x + " " + y);
-      mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, heightctrl);
-      border = (float)y/(float)viewport[3]-0.1f;
-      switched = true;
+//      mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, heightctrl);
+//      border = (float)y/(float)viewport[3]-0.1f;
+//      switched = true;
+      scene.adjustMapCenter(shadowmappingtess, movex, movey,
+          viewport[2], viewport[3]);
     }else if(javax.swing.SwingUtilities.isLeftMouseButton(e)){
-      int x = e.getX(), y = e.getY();
-      int movex = x - prevMouseX, movey = y - prevMouseY;
-      prevMouseX = x; prevMouseY = y;
       scene.moveCenter(movex, movey, viewport[2], viewport[3]);
-      //System.out.println(movex + " " + movey);
     }
   }
   
