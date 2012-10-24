@@ -17,7 +17,10 @@ import java.util.Properties;
 
 import javax.media.opengl.*;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.SliderUI;
 
 import oekaki.util.Tex2D;
@@ -42,6 +45,8 @@ import za.co.luma.math.sampling.UniformPoissonDiskSampler;
 
 public class Scene1 extends Scene {
   
+  GL2GL3 gl;
+  
   PlyLoader box = new PlyLoader("src/util/loader/ObjData/box.ply");
   PlyLoader board = new PlyLoader("src/util/loader/ObjData/board.ply");
   PlyLoader sphere = new PlyLoader("src/util/loader/ObjData/sphere3.ply");
@@ -64,6 +69,7 @@ public class Scene1 extends Scene {
   private float MAP_ASPECT;
   
   private String PATH_TO_MAP;
+  private boolean MAP_CHANGED = false;
   
   Shader viewmapshader;
   
@@ -87,7 +93,8 @@ public class Scene1 extends Scene {
   
   SceneJCheckBox textureshadow;
   JSlider possioninterval, viewdscale;
-  JButton savemapconf, loadmapconf;
+  JButton saveMapConf, loadMapConf, openMapImage;
+  JFileChooser mapImageChooser;
   
   private int currentinterval = 0, currentscale = 0;
   
@@ -160,35 +167,52 @@ public class Scene1 extends Scene {
   }
   
   public void setmapTex(GL2GL3 gl, String pathToImage, Shader shader){
-     TexImage mapimage = TexImageUtil.loadImage(pathToImage, 3, 
-         TexImage.TYPE_BYTE);
-     PATH_TO_MAP = pathToImage;
-     MAP_ASPECT = (float) mapimage.width / (float) mapimage.height;
-     if(mapTex != null){
-       mapTex.unbind(gl);
-     }
-     Tex2D maptexture = new Tex2D(GL2.GL_RGB, GL2.GL_BGR,
-         GL.GL_UNSIGNED_BYTE, mapimage.width, mapimage.height,
-         GL.GL_LINEAR, mapimage.buffer, "map");
-     maptexture.init(gl);
-     mapTex = new TexBindSet(maptexture);
-     mapTex.bind(gl);
-     shader.use(gl);
-     gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), "mapTex"), 
-         mapTex.texunit);
-     gl.glUniform1f(gl.glGetUniformLocation(shader.getID(), "aspect_Y"), 
-         MAP_ASPECT);
-     shader.unuse(gl);
-     loadMapProperties(PATH_TO_MAP);
+    //どのglかが重要みたい
+    if(mapTex != null){
+      mapTex.unbind(gl);
+      mapTex = null;
+    }
+    PATH_TO_MAP = pathToImage;
+    TexImage mapimage = TexImageUtil.loadImage(pathToImage, 3, 
+        TexImage.TYPE_BYTE);
+    MAP_ASPECT = (float) mapimage.width / (float) mapimage.height;
+    
+    Tex2D maptexture = new Tex2D(GL2.GL_RGB, GL2.GL_BGR,
+        GL.GL_UNSIGNED_BYTE, mapimage.width, mapimage.height,
+        GL.GL_LINEAR, mapimage.buffer, "map");
+
+    maptexture.init(gl);
+
+    mapTex = new TexBindSet(maptexture);
+    mapTex.bind(gl);
+
+    Shader.unuse(gl);
+    shader.use(gl);
+    gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), "mapTex"), 
+        mapTex.texunit);
+    gl.glUniform1f(gl.glGetUniformLocation(shader.getID(), "aspect_Y"), 
+        MAP_ASPECT);
+    Shader.unuse(gl);
+    loadMapProperties(PATH_TO_MAP);
+    MAP_CHANGED = false;
   }
   
   @Override
   public void clickButton(ActionEvent e){
     Object src = e.getSource();
-    if (src == savemapconf) {
+    if (src == saveMapConf) {
       saveMapProperties(PATH_TO_MAP);
-    } else if (src == loadmapconf) {
+    } else if (src == loadMapConf) {
       loadMapProperties(PATH_TO_MAP);
+    } else if (src == openMapImage) {
+      int returnVal = 
+          mapImageChooser.showOpenDialog(Ctrlpanel.getInstance().getPanel());
+      if (returnVal == JFileChooser.APPROVE_OPTION) {
+        File file = mapImageChooser.getSelectedFile();
+        //setmapTex(gl, "resources/" + file.getName(), viewmapshader);
+        PATH_TO_MAP = "resources/" + file.getName();
+        MAP_CHANGED = true;
+      }
     }
   }
   
@@ -228,7 +252,7 @@ public class Scene1 extends Scene {
     }
   }
   
-  public void setmapgui(GL2GL3 gl, Shader shader){
+  public void setMapGUI(GL2GL3 gl, Shader shader){
     shader.adduniform(gl, "mapscaling", 50);
     mapscaleslider = new UniformJSlider(0, 500, INIT_MAP_SCALE_VALUE, 
         "mapscaling", shader);
@@ -241,10 +265,27 @@ public class Scene1 extends Scene {
     
     shader.adduniform(gl, "viewscaling", viewscaling);
     
-    savemapconf = new JButton("Save");
-    Ctrlpanel.getInstance().addButton(savemapconf);
-    loadmapconf = new JButton("Load");
-    Ctrlpanel.getInstance().addButton(loadmapconf);
+    shader.adduniform(gl, "mapalpha", 50);
+    UniformJSlider mapalpha = 
+        new UniformJSlider(0, 100, 50, "mapalpha", shader);
+    Ctrlpanel.getInstance().addJSlider("Map alpha", mapalpha);
+    
+    shader.adduniform(gl, "mapadjustmode", 0);
+    Ctrlpanel.getInstance().adduniformcheckbox("Map adjust", false, 
+        "mapadjustmode", shader);
+    
+    saveMapConf = new JButton("Save");
+    Ctrlpanel.getInstance().addButton(saveMapConf);
+    
+    loadMapConf = new JButton("Load");
+    Ctrlpanel.getInstance().addButton(loadMapConf);
+    
+    openMapImage = new JButton("Open Map Image");
+    Ctrlpanel.getInstance().addButton(openMapImage);
+    
+    mapImageChooser = new JFileChooser("resources");
+    mapImageChooser.setFileFilter(
+        new FileNameExtensionFilter("*.png", "png"));
   }
   
   public void adjustMapCenter(Shader shader, int x, int y, 
@@ -269,7 +310,6 @@ public class Scene1 extends Scene {
   
   @Override
   public void init(GL2GL3 gl, Shader shader, Shader shadertess){
-    // TODO Auto-generated method stub
     super.init(gl, shader, shadertess);
     box.init(gl);
     board.init(gl);
@@ -290,9 +330,9 @@ public class Scene1 extends Scene {
 
     viewmapshader = shadertess;
     
-    setmapgui(gl, shadertess);
+    setMapGUI(gl, shadertess);
     setmapTex(gl, 
-        "resources/testmap.png",
+        "resources/whitemap.png",
         shadertess);
   }
   
@@ -513,7 +553,8 @@ public class Scene1 extends Scene {
   }
   @Override
   public void scenetess(GL3 gl, Shader shader, boolean show){
-    // TODO Auto-generated method stub
+    if (MAP_CHANGED)
+      setmapTex(gl, PATH_TO_MAP, shader);
     model.glLoadIdentity();
     model.glRotatef(-0, 1, 0, 0);
     model.glScalef(viewscaling, viewscaling, 1);

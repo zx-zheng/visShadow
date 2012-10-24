@@ -18,6 +18,7 @@ uniform float aspect_Y;
 uniform int mapscaling = 50;
 uniform float mapoffsetx, mapoffsety, viewoffsetx, viewoffsety;
 uniform float viewscaling = 1;
+uniform int mapadjustmode = 0, mapalpha = 50;
 
 in geom{
   vec4 worldpos;
@@ -244,24 +245,35 @@ void main(){
   float uplightshade = dot(Geom.normal, vec3(0,0,1));
 
   if(shadowswitch == 0)shadow = 1;
-  //if (Geom.hswitch == 1)shadow = 1;
+
+  vec4 mapcolor = texture(mapTex, 
+		   maptexcoordtransform(Geom.screentexcoord, 1, 
+					vec2(mapoffsetx, mapoffsety),
+					vec2(viewoffsetx, viewoffsety)));
+
+  vec4 visualizedcolor = 
+    vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow),1);
+
+  if(mapadjustmode == 1){
+    Color = mapalpha * 0.01 * mapcolor 
+      + (100 - mapalpha) * 0.01 * visualizedcolor;
+  } else {
+    Color = (0.7 * shadow + 0.3) * mapcolor;
+  }
   
   //Color = vec4(color * (shade * (0.3 * shadow + 0.4) + 0.3) , 1);
   //Color = vec4(color * (shade * (0.6) + 0.4 - (1-shadow)*0.4 * sin(3.14/2*shade)) , 1);
   //Color = vec4(color * (0.2 + shadow * 0.8 *shade + (1-shadow) * 0.2 * pow(shade, gamma)), 1);
   //Color = (0.2+0.8*shadow)*vec4(shadeRG(shadewide, color), 1);
   //Color = vec4(valRGshadeshadowYB(temperature, shadewide, shadow),1);
-  Color = 0.5 * vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow),1);
   //Color = vec4(valRGshadeshadowYB(humid, shadewide, shadow),1);
   //Color = vec4(valRGYBshadeshadowYB(temperature, humid, shadewide, shadow),1);
   //Color = vec4((0.3+0.7*shade*shadow)* valuetocolorRG(temperature),1);
   //vec3 colorkw = shadeRG(shadewide, color);
   //vec3 colorstd = shade * color;
   //Color = (0.8+0.2*shadow)*vec4(shadecmb(colorstd, colorkw, shadewide),1);
-  Color += 0.5 * texture(mapTex, 
-		   maptexcoordtransform(Geom.screentexcoord, 1, 
-					vec2(mapoffsetx, mapoffsety),
-					vec2(viewoffsetx, viewoffsety)));
+
+  //Color = 0.5 * vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow),1);
 
   //Color = vec4( maptexcoordtransform(Geom.screentexcoord, 1, vec2(1)),0,1);
 }

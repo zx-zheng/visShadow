@@ -45,7 +45,7 @@ public class Shader{
     updateuniforms(gl);
   }
   
-  public void unuse(GL2GL3 gl){
+  public static void unuse(GL2GL3 gl){
     gl.glUseProgram(0);
   }
   
