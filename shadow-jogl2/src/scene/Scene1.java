@@ -1,6 +1,7 @@
 package scene;
 import gui.Ctrlpanel;
 import gui.SceneJCheckBox;
+import gui.UniformJCheckBox;
 import gui.UniformJSlider;
 
 import java.awt.event.ActionEvent;
@@ -22,6 +23,8 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.SliderUI;
+
+import com.jogamp.opengl.util.PMVMatrix;
 
 import oekaki.util.Tex2D;
 import oekaki.util.TexImage;
@@ -54,8 +57,27 @@ public class Scene1 extends Scene {
   PlyLoader plus = new PlyLoader("src/util/loader/ObjData/minus.ply");
   PlyLoader tube = new PlyLoader("src/util/loader/ObjData/tube6.ply");
   PlyLoader ring = new PlyLoader("src/util/loader/ObjData/ring.ply");
+  PlyLoader cross = new PlyLoader("src/util/loader/ObjData/cross3.ply");
 
   private int VIEWPORTX, VIEWPORTY;
+  
+  //データの範囲
+  private final double LEFT_OF_LONGITUDE = 110;
+  private final double RIGHT_OF_LONGITUDE = 160;
+  
+  //データの範囲の緯度が仕様とはすこしずれている？
+  private final double UP_OF_LATITUDE = 51.5;
+  private final double DOWN_OF_LATITUDE = 21.8;
+  
+  private final double CENTER_OF_LONGITUDE = 
+      (LEFT_OF_LONGITUDE + RIGHT_OF_LONGITUDE) * 0.5;
+  private final double CENTER_OF_LATITUDE = 
+      (UP_OF_LATITUDE + DOWN_OF_LATITUDE) * 0.5;
+  private final double WIDTH_OF_LONGTITUDE = 
+      RIGHT_OF_LONGITUDE - LEFT_OF_LONGITUDE;
+  private final double WIDTH_OF_LATITUDE = 
+      UP_OF_LATITUDE - DOWN_OF_LATITUDE;
+  
   //データの解像度
   private final int  GRID_SIZE_X = 201, GRID_SIZE_Y = 251;
   
@@ -65,17 +87,21 @@ public class Scene1 extends Scene {
   
   public double PROJ_SCALE;
   private float viewscaling;
-  private final int INIT_MAP_SCALE_VALUE = 50;
+  private final int INIT_MAP_SCALE_VALUE = 200;
   private float MAP_ASPECT;
   
   private String PATH_TO_MAP;
   private boolean MAP_CHANGED = false;
   
+  private UniformJCheckBox mapAdjustmode;
+  
+  private List markPointList;
+  
   Shader viewmapshader;
   
   public Tiledboard tboard = 
-      new Tiledboard(GRID_INTERVAL_X * GRID_SIZE_X, 
-          GRID_INTERVAL_Y * GRID_SIZE_Y * ASPECT_RATIO_Y_FOR_MAP, 4);
+      new Tiledboard(GRID_INTERVAL_X * (GRID_SIZE_X - 1), 
+          GRID_INTERVAL_Y * (GRID_SIZE_Y - 1) * ASPECT_RATIO_Y_FOR_MAP, 4);
 
   private int nochangeframe = 0;
   Load2Dfloat data;
@@ -92,7 +118,7 @@ public class Scene1 extends Scene {
   float windspeedmax;
   
   SceneJCheckBox textureshadow;
-  JSlider possioninterval, viewdscale;
+  JSlider possioninterval, viewScale;
   JButton saveMapConf, loadMapConf, openMapImage;
   JFileChooser mapImageChooser;
   
@@ -114,7 +140,7 @@ public class Scene1 extends Scene {
   }
   
   public void setPROJ_SCALE(double x){
-    PROJ_SCALE = x / (GRID_INTERVAL_X * GRID_SIZE_X);
+    PROJ_SCALE = x / (GRID_INTERVAL_X * (GRID_SIZE_X - 1));
     //viewscaling =  (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
   }
   
@@ -132,12 +158,16 @@ public class Scene1 extends Scene {
     viewcenter.y -= pixeltoworldcoordy;
     
     //シェーダーにviewのオフセットを転送
+   applyViewCenterToShader();
+  }
+  
+  private void applyViewCenterToShader(){
     viewmapshader.setuniform("viewoffsetx", 
         (float) (-viewcenter.x 
-            / (GRID_INTERVAL_X * GRID_SIZE_X)));
+            / (GRID_INTERVAL_X * (GRID_SIZE_X - 1))));
     viewmapshader.setuniform("viewoffsety", 
         (float) (viewcenter.y 
-            / (GRID_INTERVAL_Y * GRID_SIZE_Y / MAP_ASPECT)));
+            / (GRID_INTERVAL_Y * (GRID_SIZE_Y - 1) / MAP_ASPECT)));
     
     nochangeframe = 0;
   }
@@ -165,6 +195,28 @@ public class Scene1 extends Scene {
     func0to1 = 
         new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0, 1);
   }
+  
+  public void initMarkPointList(){
+    markPointList = new ArrayList<Vector2DDouble>();
+    Vector2DDouble omaezaki = GeoCoordToWorldCoord(
+        new Vector2DDouble(34.595, 138.225), tboard.width, tboard.height);
+    Vector2DDouble souyamisaki= GeoCoordToWorldCoord(
+        new Vector2DDouble(45.52, 141.937), tboard.width, tboard.height);
+    Vector2DDouble oomazaki = GeoCoordToWorldCoord(
+        new Vector2DDouble(41.5, 141.), tboard.width, tboard.height);
+    Vector2DDouble miurashi = GeoCoordToWorldCoord(
+        new Vector2DDouble(35.138, 139.6195), tboard.width, tboard.height);
+    Vector2DDouble kengamine = GeoCoordToWorldCoord(
+        new Vector2DDouble(35.36047, 138.72756), tboard.width, tboard.height);
+    Vector2DDouble hakusangaku = GeoCoordToWorldCoord(
+        new Vector2DDouble(35.36056, 138.72778), tboard.width, tboard.height);
+    markPointList.add(omaezaki);
+    markPointList.add(miurashi);
+    markPointList.add(oomazaki);
+    markPointList.add(souyamisaki);
+    markPointList.add(kengamine);
+    markPointList.add(hakusangaku);
+  } 
   
   public void setmapTex(GL2GL3 gl, String pathToImage, Shader shader){
     //どのglかが重要みたい
@@ -226,11 +278,21 @@ public class Scene1 extends Scene {
       int scalevalue = (int) (INIT_MAP_SCALE_VALUE * 
           Double.parseDouble(conf.getProperty("SCALE", 
               String.valueOf(INIT_MAP_SCALE_VALUE))));
+      int viewscalevalue = Integer.parseInt(conf.getProperty("VIEW_SCALE",
+          "1"));
+      mapscaleslider.setValue(scalevalue);
+      viewScale.setValue(viewscalevalue);
       mapoffset.x = 
           Double.parseDouble(conf.getProperty("OFFSET_X", "0"));
       mapoffset.y = 
           Double.parseDouble(conf.getProperty("OFFSET_Y", "0"));
-      mapscaleslider.setValue(scalevalue);
+      
+      viewcenter.x = 
+          Double.parseDouble(conf.getProperty("VIEW_CENTER_X", "0"));
+      viewcenter.y = 
+          Double.parseDouble(conf.getProperty("VIEW_CENTER_Y", "0"));
+      applyViewCenterToShader();
+      
       applyMapCenter(viewmapshader);
     } catch (IOException e) {
       System.out.println("No properties file for " + pathtomap);
@@ -245,6 +307,9 @@ public class Scene1 extends Scene {
       fw.write("SCALE = " + Double.toString(scale) + "\n");
       fw.write("OFFSET_X = " + Double.toString(mapoffset.x) + "\n");
       fw.write("OFFSET_Y = " + Double.toString(mapoffset.y) + "\n");
+      fw.write("VIEW_SCALE = " + Integer.toString(viewScale.getValue()) + "\n");
+      fw.write("VIEW_CENTER_X = " + Double.toString(viewcenter.x) + "\n");
+      fw.write("VIEW_CENTER_Y = " + Double.toString(viewcenter.y) + "\n");
       fw.close();
     }catch(IOException e){
       e.printStackTrace();
@@ -253,8 +318,8 @@ public class Scene1 extends Scene {
   }
   
   public void setMapGUI(GL2GL3 gl, Shader shader){
-    shader.adduniform(gl, "mapscaling", 50);
-    mapscaleslider = new UniformJSlider(0, 500, INIT_MAP_SCALE_VALUE, 
+    shader.adduniform(gl, "mapscaling", INIT_MAP_SCALE_VALUE);
+    mapscaleslider = new UniformJSlider(0, 400, INIT_MAP_SCALE_VALUE, 
         "mapscaling", shader);
     Ctrlpanel.getInstance().addJSlider("MapScale", mapscaleslider);
     shader.adduniform(gl, "mapoffsetx", 0f);
@@ -270,9 +335,10 @@ public class Scene1 extends Scene {
         new UniformJSlider(0, 100, 50, "mapalpha", shader);
     Ctrlpanel.getInstance().addJSlider("Map alpha", mapalpha);
     
-    shader.adduniform(gl, "mapadjustmode", 0);
-    Ctrlpanel.getInstance().adduniformcheckbox("Map adjust", false, 
+    mapAdjustmode = new UniformJCheckBox("Map adjust", false, 
         "mapadjustmode", shader);
+    shader.adduniform(gl, "mapadjustmode", 0);
+    Ctrlpanel.getInstance().adduniformcheckbox(mapAdjustmode);
     
     saveMapConf = new JButton("Save");
     Ctrlpanel.getInstance().addButton(saveMapConf);
@@ -293,7 +359,8 @@ public class Scene1 extends Scene {
     VIEWPORTX = viewportx; VIEWPORTY = viewporty;
     viewmapshader = shader;
     double currentmapscale = 
-        (double) mapscaleslider.getValue() / (double) INIT_MAP_SCALE_VALUE;
+        Math.pow(2, (mapscaleslider.getValue() - INIT_MAP_SCALE_VALUE) / 20.0);
+       // (double) mapscaleslider.getValue() / (double) INIT_MAP_SCALE_VALUE;
     double viewscalefactor = viewscaling/ PROJ_SCALE;
     mapoffset.x += x * currentmapscale / (viewportx * viewscalefactor);
     mapoffset.y += y * currentmapscale / (viewporty * viewscalefactor)
@@ -319,21 +386,24 @@ public class Scene1 extends Scene {
     plus.init(gl);
     tube.init(gl);
     ring.init(gl);
+    cross.init(gl);
     Ctrlpanel.getInstance().scene = this;
     textureshadow = new SceneJCheckBox("texture shadow", false);
     Ctrlpanel.getInstance().addscenecheckbox(textureshadow);
     possioninterval = new JSlider(10, 60, 40);
     Ctrlpanel.getInstance().addSlider(possioninterval, "interval");
-    viewdscale = new JSlider(1, 20, 1);
-    Ctrlpanel.getInstance().addSlider(viewdscale, "Scale");
-    possioninterval(intervaltopossion(currentinterval));
-
+    viewScale = new JSlider(1, 200, 1);
+    Ctrlpanel.getInstance().addSlider(viewScale, "Scale");
+    
     viewmapshader = shadertess;
     
     setMapGUI(gl, shadertess);
     setmapTex(gl, 
         "resources/whitemap.png",
         shadertess);
+    possioninterval(intervaltopossion(currentinterval));
+    
+    initMarkPointList();
   }
   
   
@@ -384,34 +454,25 @@ public class Scene1 extends Scene {
   
   private float windspeedmax(){
     float max = 0;
-    for(int i = 0; i < windspeedu.height * windspeedu.width-1; i++){
-      float tmp = (float)Math.sqrt(Math.pow(windspeedu.getfloat(i),2)
-          +Math.pow(windspeedv.getfloat(i),2));
-      if(tmp > max)max = tmp;
+    for (int i = 0; i < windspeedu.height * windspeedu.width - 1; i++) {
+      float tmp = (float) Math.sqrt(Math.pow(windspeedu.getfloat(i), 2)
+          + Math.pow(windspeedv.getfloat(i), 2));
+      if (tmp > max) {
+        max = tmp;
+      }
     }
     return max;
   }
   
-  private float pointtovalue(Vector2DDouble point, 
-      Load2Dfloat data1, Load2Dfloat data2,
-      double left, double right, double up, double down){
-    int leftupindex;
-    int datawidth = data1.width, dataheight = data1.height;
-    double width = right - left, height = up - down;
-    double leftdownx = (point.x - left) / width * datawidth;
-    double leftdowny = (point.y - down) / height * dataheight;
-    leftupindex = (int) leftdownx + (int) leftdowny * datawidth;
-    double interx = leftdownx - (int) leftdownx;
-    double intery = leftdowny - (int) leftdowny;
-    double value1 = intery * (interx * data1.getfloat(leftupindex)
-        + (1 - interx) * data1.getfloat(leftupindex + 1))
-        + (1 - intery) * (interx * data1.getfloat(leftupindex + datawidth)
-        + (1 - interx) * data1.getfloat(leftupindex + datawidth + 1));
-    double value2 = intery * (interx * data2.getfloat(leftupindex)
-        + (1 - interx) * data2.getfloat(leftupindex + 1))
-        + (1 - intery) * (interx * data2.getfloat(leftupindex + datawidth)
-        + (1 - interx) * data2.getfloat(leftupindex + datawidth + 1));
-    return (float) Math.sqrt(value1 * value1 + value2 * value2);
+  //経度緯度から原点中心の width x height の板への射影
+  private Vector2DDouble GeoCoordToWorldCoord(Vector2DDouble geocoord,
+      double width, double height){
+    //System.out.println(CENTER_OF_LATITUDE + " " + CENTER_OF_LONGITUDE);
+    return new Vector2DDouble(
+        //緯度  3°ずれている
+        (geocoord.x - CENTER_OF_LATITUDE - 0) / WIDTH_OF_LATITUDE * height,
+        //経度
+        (geocoord.y - CENTER_OF_LONGITUDE) / WIDTH_OF_LONGTITUDE * width);
   }
   
   private double intervaltopossion(int value) {
@@ -449,6 +510,10 @@ public class Scene1 extends Scene {
       tube.rendering(gl);
 //      rping.rendering(gl);
       model.glPopMatrix();
+    }
+    
+    if (mapAdjustmode.isSelected()){
+      renderMarkPoint(gl, model, shader, markPointList);
     }
     
     //湿度
@@ -548,6 +613,21 @@ public class Scene1 extends Scene {
     gl.glFlush();
   }
   
+  private void renderMarkPoint(GL2GL3 gl, PMVMatrix model, Shader shader,
+      List<Vector2DDouble> pointList){
+    model.glLoadIdentity();
+    model.glScalef(viewscaling, viewscaling, 1);
+    model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
+    for (Vector2DDouble markpoint : pointList){
+      model.glPushMatrix();
+      model.glTranslatef((float) markpoint.y, (float) markpoint.x, 1);
+      model.glScalef(1f/viewscaling  * 0.05f, 1f/viewscaling * 0.05f, 1);
+      updateModelMatrix(gl, shader, model);
+      cross.rendering(gl);
+      model.glPopMatrix();
+    }
+  }
+  
   public void scenetess(GL3 gl, Shader shader){
     scenetess(gl, shader, true);
   }
@@ -556,7 +636,6 @@ public class Scene1 extends Scene {
     if (MAP_CHANGED)
       setmapTex(gl, PATH_TO_MAP, shader);
     model.glLoadIdentity();
-    model.glRotatef(-0, 1, 0, 0);
     model.glScalef(viewscaling, viewscaling, 1);
     model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
     updateModelMatrix(gl, shader, model);
@@ -575,10 +654,13 @@ public class Scene1 extends Scene {
   @Override
   public void iterate(){
     nochangeframe++;
-    if(currentscale != viewdscale.getValue()){
-      viewscaling = (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
-      viewmapshader.setuniform("viewscaling", (float) (1.0 / (viewdscale.getValue())));
-      currentscale = viewdscale.getValue();
+    if(currentscale != viewScale.getValue()){
+      viewscaling =
+          (float) (Math.pow(2, viewScale.getValue() / 10.0) * PROJ_SCALE);
+          //(float) ((double) (viewScale.getValue()) * PROJ_SCALE);
+      viewmapshader.setuniform("viewscaling", 
+          (float) (1.0 / (viewscaling / PROJ_SCALE)));
+      currentscale = viewScale.getValue();
       nochangeframe = 0;
     }
     

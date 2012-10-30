@@ -173,7 +173,7 @@ public class SceneRender{
 //    weatherTex.init(gl);
 //    weather = TexUnitManager.getInstance().bind(gl, weatherTex);
     
-    int div = 10;
+    int div = 2;
     Load2Dfloat l0 = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
     l0.loadOffsetLine(0);
     Spline spl0 = new Spline(l0.getbuffer(), l0.width, l0.height, div);

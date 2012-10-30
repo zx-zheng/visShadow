@@ -44,9 +44,13 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   
   public void adduniformcheckbox(String text, boolean selected,
       String name, Shader shader){
-    UniformJCheckBox cbox = new UniformJCheckBox(text, selected, name, shader);
-    cbox.addItemListener(this);
-    panel.add(cbox);
+    adduniformcheckbox(
+        new UniformJCheckBox(text, selected, name, shader));
+  }
+  
+  public void adduniformcheckbox(UniformJCheckBox checkbox){
+    checkbox.addItemListener(this);
+    panel.add(checkbox);
   }
   
   public void addscenecheckbox(SceneJCheckBox cbox){

@@ -15,7 +15,7 @@ uniform sampler2D weatherTex, mapTex;
 uniform float gamma;
 uniform int L, lab_a, lab_b, shaderange, shadowrange;
 uniform float aspect_Y;
-uniform int mapscaling = 50;
+uniform int mapscaling = 200;
 uniform float mapoffsetx, mapoffsety, viewoffsetx, viewoffsety;
 uniform float viewscaling = 1;
 uniform int mapadjustmode = 0, mapalpha = 50;
@@ -181,7 +181,8 @@ vec3 shadecmb(vec3 shade, vec3 shadecw, float shadewide){
 vec2 maptexcoordtransform(vec2 texcoord, float scale, 
 			  vec2 offset, vec2 viewoffset){
   vec2 aspect = vec2(1, aspect_Y);
-  float scaling = mapscaling * 0.02;
+  //float scaling = mapscaling * 0.02;
+  float scaling = pow(2, (mapscaling - 200) * 0.05);
   //scaling = 1;
   return texcoord  * aspect * 0.5 * scaling * viewscaling 
     + offset + viewoffset * scaling + vec2(0.5);
