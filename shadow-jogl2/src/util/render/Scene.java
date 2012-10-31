@@ -254,22 +254,21 @@ public abstract class Scene implements RenderingPass {
     gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
     gl.glViewport(0, 0, smapwidth, smapheight);
     
-    shadowmapshader.use(gl);
-    gl.glUniform1i(
-        gl.glGetUniformLocation(shadowmapshader.getID(), "stage"),0);
-    smapupdatelights(gl);
-    scene(gl, shadowmapshader, show);
-    gl.glFlush();
-    
     shadowmapshadertess.use(gl);
     gl.glUniform1i(
         gl.glGetUniformLocation(shadowmapshadertess.getID(), "stage"),0);
     smapupdatelightstess(gl);
     scenetess((GL4)gl, shadowmapshadertess);
     
+    shadowmapshader.use(gl);
+    gl.glUniform1i(
+        gl.glGetUniformLocation(shadowmapshader.getID(), "stage"),0);
+    smapupdatelights(gl);
+    scene(gl, shadowmapshader, show);
+    
     gl.glFlush();
     smapfbo.unbind(gl);
-    shadowmapshader.unuse(gl);
+    Shader.unuse(gl);
   }
   
   
@@ -300,14 +299,14 @@ public abstract class Scene implements RenderingPass {
     gl.glClearColor(1, 1, 1, 1);
     gl.glViewport(offsetx, offsety, width, height);
     
-    shader.use(gl);
-    updateligths(gl, shader);
-    scene(gl, shader, show);
-    
     shadertess.use(gl);
     updateligths(gl, shadertess);
     scenetess((GL3)gl, shadertess, false);
-    shadertess.unuse(gl);
+    
+    shader.use(gl);
+    updateligths(gl, shader);
+    scene(gl, shader, show);
+    Shader.unuse(gl);
     
     gl.glFlush();
   }   

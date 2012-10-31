@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 
 import za.co.luma.geom.Vector2DDouble;
 
-public class ByteBufferFloat2Wrapper2D extends RealFunction2DDouble{
+public class ByteBufferFloatWrapper2D extends RealFunction2DDouble{
 
   //データは1次元で左上から右下の順番で数値が並んでいるとする
-  private ByteBuffer buffer1, buffer2;
+  private ByteBuffer buffer1;
   //p1:leftdown p2:rightup
   Vector2DDouble p1, p2;
   int datawidth, dataheight;
@@ -15,10 +15,9 @@ public class ByteBufferFloat2Wrapper2D extends RealFunction2DDouble{
   double max;
   boolean getmax = false;
   
-  public ByteBufferFloat2Wrapper2D(double x1, double y1, double x2, double y2, 
-      int datawidth, int dataheight, ByteBuffer buffer1, ByteBuffer buffer2){
+  public ByteBufferFloatWrapper2D(double x1, double y1, double x2, double y2, 
+      int datawidth, int dataheight, ByteBuffer buffer1){
     this.buffer1 = buffer1;
-    this.buffer2 = buffer2;
     p1 = new Vector2DDouble(x1, y1);
     p2 = new Vector2DDouble(x2, y2);
     this.datawidth = datawidth;
@@ -64,11 +63,7 @@ public class ByteBufferFloat2Wrapper2D extends RealFunction2DDouble{
         + (1 - interx) * buffer1.getFloat(4 * rightupindex))
         + (1 - intery) * (interx * buffer1.getFloat(4 * leftdownindex)
         + (1 - interx) * buffer1.getFloat(4 * rightdownindex));
-    double value2 = (intery) * (interx * buffer2.getFloat(4 * leftupindex)
-        + (1 - interx) * buffer2.getFloat(4 * rightupindex))
-        + (1 - intery) * (interx * buffer2.getFloat(4 * leftdownindex)
-        + (1 - interx) * buffer2.getFloat(4 * rightdownindex));
-    return Math.sqrt(value1 * value1 + value2 * value2);
+    return value1;
   }
   
   private boolean inArea(Vector2DDouble p){
@@ -82,8 +77,7 @@ public class ByteBufferFloat2Wrapper2D extends RealFunction2DDouble{
   public double max(){
     if(!getmax){
       for(int i = 0; i <buffer1.limit() ; i+=4){
-        double tmp = Math.sqrt(Math.pow(buffer1.getFloat(i),2)
-            +Math.pow(buffer2.getFloat(i),2));
+        double tmp = buffer1.getFloat(i);
         if(tmp > max)max = tmp;
       }
       getmax = true;

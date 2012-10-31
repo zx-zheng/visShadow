@@ -36,11 +36,13 @@ import util.gl.TexUnitManager;
 import util.loader.Load2Dfloat;
 import util.loader.PlyLoader;
 import util.render.Scene;
+import util.render.obj.Billboard;
 import util.render.obj.Light;
 import util.render.obj.Tiledboard;
 import za.co.luma.geom.Vector2DDouble;
 import za.co.luma.geom.Vector2DInt;
 import za.co.luma.math.function.ByteBufferFloat2Wrapper2D;
+import za.co.luma.math.function.ByteBufferFloatWrapper2D;
 import za.co.luma.math.function.List2Wrapper2D;
 import za.co.luma.math.function.RealFunction2DWrapper;
 import za.co.luma.math.sampling.PoissonDiskSampler;
@@ -59,6 +61,7 @@ public class Scene1 extends Scene {
   PlyLoader ring = new PlyLoader("src/util/loader/ObjData/ring.ply");
   PlyLoader cross = new PlyLoader("src/util/loader/ObjData/cross3.ply");
 
+  Billboard shadow;
   private int VIEWPORTX, VIEWPORTY;
   
   //データの範囲
@@ -107,6 +110,7 @@ public class Scene1 extends Scene {
   Load2Dfloat data;
       //new Load2Dfloat("test2.txt");
   ByteBufferFloat2Wrapper2D windspeed;
+  ByteBufferFloatWrapper2D humidity;
   RealFunction2DWrapper func, func0to1;
   
   Load2Dfloat windspeedu;
@@ -180,7 +184,7 @@ public class Scene1 extends Scene {
     windspeedu.load();
     windspeedv.load();
     windspeedmax = windspeedmax();
-    System.out.println("Max value : " + windspeedmax);
+    
     data = 
         new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
     data.load();
@@ -190,10 +194,14 @@ public class Scene1 extends Scene {
             tboard.leftdownx + tboard.width, tboard.leftdowny + tboard.height,
             windspeedu.width, windspeedu.height, 
             windspeedu.getbuffer(), windspeedv.getbuffer());
+    humidity = new ByteBufferFloatWrapper2D(tboard.leftdownx, tboard.leftdowny, 
+        tboard.leftdownx + tboard.width, tboard.leftdowny + tboard.height,
+        data.width, data.height, 
+        data.getbuffer());
     func = 
-        new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0.2, 1);
+        new RealFunction2DWrapper(humidity, 0, humidity.max(), 0.2, 1);
     func0to1 = 
-        new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0, 1);
+        new RealFunction2DWrapper(humidity, 0, humidity.max(), 0, 1);
   }
   
   public void initMarkPointList(){
@@ -335,6 +343,11 @@ public class Scene1 extends Scene {
         new UniformJSlider(0, 100, 50, "mapalpha", shader);
     Ctrlpanel.getInstance().addJSlider("Map alpha", mapalpha);
     
+    shader.adduniform(gl, "lightSize", 1);
+    UniformJSlider lightSize = 
+        new UniformJSlider(1, 100, 1, "lightSize", shader);
+    Ctrlpanel.getInstance().addJSlider("Light size", lightSize);
+    
     mapAdjustmode = new UniformJCheckBox("Map adjust", false, 
         "mapadjustmode", shader);
     shader.adduniform(gl, "mapadjustmode", 0);
@@ -387,6 +400,8 @@ public class Scene1 extends Scene {
     tube.init(gl);
     ring.init(gl);
     cross.init(gl);
+    shadow = new Billboard(gl, "resources/whiteshadow2.png");
+    
     Ctrlpanel.getInstance().scene = this;
     textureshadow = new SceneJCheckBox("texture shadow", false);
     Ctrlpanel.getInstance().addscenecheckbox(textureshadow);
@@ -469,7 +484,7 @@ public class Scene1 extends Scene {
       double width, double height){
     //System.out.println(CENTER_OF_LATITUDE + " " + CENTER_OF_LONGITUDE);
     return new Vector2DDouble(
-        //緯度  3°ずれている
+        //緯度
         (geocoord.x - CENTER_OF_LATITUDE - 0) / WIDTH_OF_LATITUDE * height,
         //経度
         (geocoord.y - CENTER_OF_LONGITUDE) / WIDTH_OF_LONGTITUDE * width);
@@ -510,6 +525,48 @@ public class Scene1 extends Scene {
       tube.rendering(gl);
 //      rping.rendering(gl);
       model.glPopMatrix();
+    }
+    
+//    if(!show){
+//      model.glLoadIdentity();
+//      //model.glTranslatef(0, 0, 1);
+//      updateModelMatrix(gl, shader, model);
+//      gl.glDisable(GL2.GL_DEPTH_TEST);
+//      gl.glEnable(GL2.GL_BLEND);
+//      gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+//      shadow.rendering(gl, shader);
+//      gl.glDisable(GL2.GL_BLEND);
+//      gl.glEnable(GL2.GL_DEPTH_TEST);
+//    }
+    
+    if(!show){
+      gl.glDisable(GL2.GL_DEPTH_TEST);
+      gl.glEnable(GL2.GL_BLEND);
+      gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+      for(int i=0; i < possion2.size(); i++){
+        model.glPushMatrix();
+        Vector2DDouble pos = possion2.get(i);
+        float value = (float)func0to1.getDouble(pos.x, pos.y);
+
+        //拡大
+        model.glScalef(viewscaling, viewscaling, 1);
+        //移動
+        //y成分に一時的にマイナスをつけてごまかす
+        model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
+        model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
+        cylinderscale = cylinderscale();
+        model.glScalef(1f * cylinderscale * value * 7, 
+            1f * cylinderscale * value * 7, 
+            1);
+        //縮小
+        model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
+        model.glRotatef(135, 0, 0, 1);
+        updateModelMatrix(gl, shader, model);
+        shadow.rendering(gl, shader);
+        model.glPopMatrix();
+      }
+      gl.glDisable(GL2.GL_BLEND);
+      gl.glEnable(GL2.GL_DEPTH_TEST);
     }
     
     if (mapAdjustmode.isSelected()){

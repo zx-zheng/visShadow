@@ -19,6 +19,7 @@ uniform int mapscaling = 200;
 uniform float mapoffsetx, mapoffsety, viewoffsetx, viewoffsety;
 uniform float viewscaling = 1;
 uniform int mapadjustmode = 0, mapalpha = 50;
+uniform int lightSize;
 
 in geom{
   vec4 worldpos;
@@ -28,6 +29,20 @@ in geom{
   vec2 screentexcoord;
   flat int hswitch;
 }Geom;
+
+vec2 possion32[32] = 
+  vec2[](
+	 vec2(-0.975402, -0.0711386), vec2(-0.920347, -0.41142), vec2(-0.883908, 0.217872),
+	 vec2(-0.884518, 0.568041), vec2(-0.811945, 0.90521), vec2(-0.792474, -0.779962), 
+	 vec2(-0.614856, 0.386578), vec2(-0.580859, -0.208777), vec2(-0.53795, 0.716666),
+	 vec2(-0.515427, 0.0899991), vec2(-0.454634, -0.707938), vec2(-0.420942, 0.991272),
+	 vec2(-0.261147, 0.588488), vec2(-0.211219, 0.114841), vec2(-0.146336, -0.259194),
+	 vec2(-0.139439, -0.888668), vec2(0.0116886, 0.326395), vec2(0.0380566, 0.625477),
+	 vec2(0.0625935, -0.50853), vec2(0.125584, 0.0469069), vec2(0.169469, -0.997253),
+	 vec2(0.320597, 0.291055), vec2(0.359172, -0.633717), vec2(0.435713, -0.250832),
+	 vec2(0.507797, -0.916562), vec2(0.545763, 0.730216), vec2(0.56859, 0.11655),
+	 vec2(0.743156, -0.505173), vec2(0.736442, -0.189734), vec2(0.843562, 0.357036),
+	 vec2(0.865413, 0.763726), vec2(0.872005, -0.927));
 
 vec3 LabtoXYZ(float l,float a,float b){
   float xn = 0.9505;
@@ -204,11 +219,27 @@ void main(){
     if(posfromlight.x > 0 && posfromlight.x < 1 
        && posfromlight.y > 0 && posfromlight.y < 1 && posfromlightworld.z < 0){
       float occluder, shadowtmp=0;
+
+      ///*PCF
       for(int j = 0; j < offset.length; j++){
 	occluder = textureOffset(shadowmap, vec3(posfromlight.xy, i), offset[j]).x;
 	shadowtmp += occluder < abs(posfromlightworld.z) - 0.04? 0:1.0 * lightscolor[i].w;
       }
       shadowtmp /= offset.length;
+      //*/
+
+      /*PCSS*/
+      /*
+      float occluderFromLight = texture(shadowmap, vec3(posfromlight.xy, i)).z;
+      float penumbraSize 
+	= min(1, lightSize/20240000.0 * pow((abs(posfromlightworld.z) - occluderFromLight),3) );
+      for(int j = 0; j < possion32.length; j++){
+	occluder = texture(shadowmap, vec3(posfromlight.xy + penumbraSize * possion32[j], i)).x;
+	shadowtmp += occluder < abs(posfromlightworld.z) - 0.04? 0:1.0 * lightscolor[i].w;
+      }
+      shadowtmp /= possion32.length;
+      */
+
       if(lightsattr[i].x * Geom.hswitch==1 )shadowtmp = 1;
       vec3 lightvec = normalize((inverse(lightsview[i]) * vec4(0,0,0,1)).xyz 
 				- Geom.worldpos.xyz/Geom.worldpos.w);
@@ -259,7 +290,11 @@ void main(){
     Color = mapalpha * 0.01 * mapcolor 
       + (100 - mapalpha) * 0.01 * visualizedcolor;
   } else {
-    Color = (0.7 * shadow + 0.3) * mapcolor;
+    if(mapcolor.x > 0.9){
+      Color = (0.4 * shadow + 0.6) * visualizedcolor;
+    } else {
+      Color = (0.4 * shadow + 0.6) * mapcolor;
+    }
   }
   
   //Color = vec4(color * (shade * (0.3 * shadow + 0.4) + 0.3) , 1);
