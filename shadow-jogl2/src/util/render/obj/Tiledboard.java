@@ -1,10 +1,11 @@
 package util.render.obj;
 
+import gl.Semantic;
+
 import java.nio.FloatBuffer;
 
 import javax.media.opengl.*;
 
-import util.gl.Semantic;
 
 public class Tiledboard extends Obj implements Semantic{
 
@@ -117,5 +118,11 @@ public class Tiledboard extends Obj implements Semantic{
         vertices[4 + i * hdivide * 20 + j * 20 + 5] = j;
       }
     }
+  }
+
+  @Override
+  void rendering(GL2GL3 gl){
+    // TODO Auto-generated method stub
+    
   }
 }

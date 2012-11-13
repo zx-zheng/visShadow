@@ -1,4 +1,7 @@
 package scene;
+import gl.Shader;
+import gl.TexBindSet;
+import gl.TexUnitManager;
 import gui.Ctrlpanel;
 import gui.SceneJCheckBox;
 import gui.UniformJCheckBox;
@@ -11,7 +14,9 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.security.AllPermission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -23,19 +28,19 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.SliderUI;
+import javax.xml.datatype.DatatypeFactory;
 
 import com.jogamp.opengl.util.PMVMatrix;
 
 import oekaki.util.Tex2D;
 import oekaki.util.TexImage;
 import oekaki.util.TexImageUtil;
+import render.Scene;
 
-import util.gl.Shader;
-import util.gl.TexBindSet;
-import util.gl.TexUnitManager;
+import util.DataSet2D;
 import util.loader.Load2Dfloat;
 import util.loader.PlyLoader;
-import util.render.Scene;
+import util.loader.Spline;
 import util.render.obj.Billboard;
 import util.render.obj.Light;
 import util.render.obj.Tiledboard;
@@ -49,8 +54,6 @@ import za.co.luma.math.sampling.PoissonDiskSampler;
 import za.co.luma.math.sampling.UniformPoissonDiskSampler;
 
 public class Scene1 extends Scene {
-  
-  GL2GL3 gl;
   
   PlyLoader box = new PlyLoader("src/util/loader/ObjData/box.ply");
   PlyLoader board = new PlyLoader("src/util/loader/ObjData/board.ply");
@@ -100,6 +103,13 @@ public class Scene1 extends Scene {
   
   private List markPointList;
   
+  public ArrayList<DataSet2D> dataList;
+  private ArrayList<Integer> dataIndexList = new ArrayList<Integer>(),
+      choicedDataList = new ArrayList<Integer>(),
+      usedDataList = new ArrayList<Integer>();
+  private DataSet2D currentData;
+  private int dataSetCount;
+  
   Shader viewmapshader;
   
   public Tiledboard tboard = 
@@ -107,21 +117,10 @@ public class Scene1 extends Scene {
           GRID_INTERVAL_Y * (GRID_SIZE_Y - 1) * ASPECT_RATIO_Y_FOR_MAP, 4);
 
   private int nochangeframe = 0;
-  Load2Dfloat data;
-      //new Load2Dfloat("test2.txt");
-  ByteBufferFloat2Wrapper2D windspeed;
-  ByteBufferFloatWrapper2D humidity;
-  RealFunction2DWrapper func, func0to1;
   
-  Load2Dfloat windspeedu;
-      
-  Load2Dfloat windspeedv;
-  
-  FloatBuffer datafb;
-  
-  float windspeedmax;
-  
+  //GUI
   SceneJCheckBox textureshadow;
+  SceneJCheckBox softshadow;
   JSlider possioninterval, viewScale;
   JButton saveMapConf, loadMapConf, openMapImage;
   JFileChooser mapImageChooser;
@@ -137,15 +136,12 @@ public class Scene1 extends Scene {
   
   public TexBindSet mapTex;
   
-  List<Vector2DDouble> possion2;
-  
   public Scene1() {
     super();
   }
   
   public void setPROJ_SCALE(double x){
     PROJ_SCALE = x / (GRID_INTERVAL_X * (GRID_SIZE_X - 1));
-    //viewscaling =  (float) ((double) (viewdscale.getValue()) * PROJ_SCALE);
   }
   
   //中心の移動 x,yはピクセル単位
@@ -165,6 +161,15 @@ public class Scene1 extends Scene {
    applyViewCenterToShader();
   }
   
+  public Vector2DDouble viewportToWorld(Vector2DInt posInWindow, 
+      int viewportw, int viewporth){
+    return new Vector2DDouble(
+        (posInWindow.x - viewportw * 0.5) / (double) viewportw 
+        * Math.abs(orthoproj[1] - orthoproj[0]) / viewscaling + viewcenter.x,
+        (posInWindow.y - viewporth * 0.5) / (double) viewporth 
+        * Math.abs(orthoproj[3] - orthoproj[2]) / viewscaling + viewcenter.y);
+  }
+  
   private void applyViewCenterToShader(){
     viewmapshader.setuniform("viewoffsetx", 
         (float) (-viewcenter.x 
@@ -176,33 +181,94 @@ public class Scene1 extends Scene {
     nochangeframe = 0;
   }
   
-  public void initfile(String filepath){
-    windspeedu = 
-        new Load2Dfloat(filepath + "UofWind_10.0m_T0.txt");
-    windspeedv = 
-        new Load2Dfloat(filepath + "VofWind_10.0m_T0.txt");
-    windspeedu.load();
-    windspeedv.load();
-    windspeedmax = windspeedmax();
-    
-    data = 
-        new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
-    data.load();
-    datafb = data.getbuffer().asFloatBuffer();
-    windspeed = 
-        new ByteBufferFloat2Wrapper2D(tboard.leftdownx, tboard.leftdowny, 
-            tboard.leftdownx + tboard.width, tboard.leftdowny + tboard.height,
-            windspeedu.width, windspeedu.height, 
-            windspeedu.getbuffer(), windspeedv.getbuffer());
-    humidity = new ByteBufferFloatWrapper2D(tboard.leftdownx, tboard.leftdowny, 
-        tboard.leftdownx + tboard.width, tboard.leftdowny + tboard.height,
-        data.width, data.height, 
-        data.getbuffer());
-    func = 
-        new RealFunction2DWrapper(humidity, 0, humidity.max(), 0.2, 1);
-    func0to1 = 
-        new RealFunction2DWrapper(humidity, 0, humidity.max(), 0, 1);
+  private void initData(GL2GL3 gl){
+    dataList = new ArrayList<DataSet2D>();
+    dataSetCount = 0;
+//    String filepath = "/home/michael/zheng/Programs/WeatherData/2009100818/";
+//    addData(gl, filepath);
+//    filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
+//    addData(gl, filepath);
+//    filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
+//    addData(gl, filepath);
+//    filepath = "/home/michael/zheng/Programs/WeatherData/2009100800/";
+//    addData(gl, filepath);
+//    filepath = "/home/michael/zheng/Programs/WeatherData/2009100806/";
+//    addData(gl, filepath);
   }
+  
+  public void addData(GL2GL3 gl, String filepath){
+    DataSet2D data = new DataSet2D(filepath, tboard);
+    data.init(gl);
+    dataList.add(data);
+    dataIndexList.add(dataSetCount);
+    dataSetCount++;
+  }
+  
+  //データを一つ選んでセット
+  public int updateChoiceList(GL2GL3 gl){
+    for(int i : choicedDataList){
+      usedDataList.add(i);
+      dataList.get(i).unuse(gl);
+    }
+    choicedDataList.clear();
+    
+    if(dataIndexList.size() < 1){
+      System.out.println("No enough data set and reset index list.");
+      resetChoiceList(gl);
+    }
+    
+    int targetindex = (int)(Math.random() * dataIndexList.size());
+    choicedDataList.add(dataIndexList.get(targetindex));
+    dataIndexList.remove(targetindex);
+    
+    updatePoission(intervaltopossion(currentinterval));
+    setDataShaderUniform(gl, choicedDataList.get(0));
+    return choicedDataList.get(0);
+  }
+  
+  public ArrayList<Integer> resetAndGetChoiceList(GL2GL3 gl, int num){
+    resetChoiceList(gl);
+    if(dataIndexList.size() < num){
+      System.out.println("No enough data set.");
+      num = dataIndexList.size();
+    }
+    for(int i = 0; i < num; i++){
+      int targetindex = (int)(Math.random() * dataIndexList.size());
+      choicedDataList.add(dataIndexList.get(targetindex));
+      dataIndexList.remove(targetindex);
+    }
+    updatePoission(intervaltopossion(currentinterval));
+    return choicedDataList;
+  }
+  
+  public void resetChoiceList(GL2GL3 gl){
+    for(int i : choicedDataList){
+      dataIndexList.add(i);
+      dataList.get(i).unuse(gl);
+    }
+    choicedDataList.clear();
+    
+    for(int i : usedDataList){
+      dataIndexList.add(i);
+    }
+    usedDataList.clear();
+  }
+  
+  public void setDataShaderUniform(GL2GL3 gl, int index){
+    currentData = dataList.get(index);
+    currentData.use(gl);
+    
+    shader.setuniform("weatherTex", currentData.tex.texunit);
+    shader.setuniform("shadowmap", getShadowmapTexture().texunit);
+    
+    shadertess.setuniform("weatherTex", currentData.tex.texunit);
+    shadertess.setuniform("shadowmap", getShadowmapTexture().texunit);
+    shadertess.setuniform("divide", tboard.getdivide());
+    
+    setShadowmapShaderTexture(gl, currentData.tex, "weatherTex");
+    setShadowmapShader1i(gl, tboard.getdivide(), "divide");
+  }
+ 
   
   public void initMarkPointList(){
     markPointList = new ArrayList<Vector2DDouble>();
@@ -226,8 +292,8 @@ public class Scene1 extends Scene {
     markPointList.add(hakusangaku);
   } 
   
-  public void setmapTex(GL2GL3 gl, String pathToImage, Shader shader){
-    //どのglかが重要みたい
+  public void setMapTex(GL2GL3 gl, String pathToImage, Shader shader){
+    //どのglかが重要
     if(mapTex != null){
       mapTex.unbind(gl);
       mapTex = null;
@@ -338,6 +404,8 @@ public class Scene1 extends Scene {
     
     shader.adduniform(gl, "viewscaling", viewscaling);
     
+    shader.adduniform(gl, "canvasAspect", 1);
+    
     shader.adduniform(gl, "mapalpha", 50);
     UniformJSlider mapalpha = 
         new UniformJSlider(0, 100, 50, "mapalpha", shader);
@@ -367,10 +435,9 @@ public class Scene1 extends Scene {
         new FileNameExtensionFilter("*.png", "png"));
   }
   
-  public void adjustMapCenter(Shader shader, int x, int y, 
+  public void adjustMapCenter(int x, int y, 
       int viewportx, int viewporty){
     VIEWPORTX = viewportx; VIEWPORTY = viewporty;
-    viewmapshader = shader;
     double currentmapscale = 
         Math.pow(2, (mapscaleslider.getValue() - INIT_MAP_SCALE_VALUE) / 20.0);
        // (double) mapscaleslider.getValue() / (double) INIT_MAP_SCALE_VALUE;
@@ -378,7 +445,7 @@ public class Scene1 extends Scene {
     mapoffset.x += x * currentmapscale / (viewportx * viewscalefactor);
     mapoffset.y += y * currentmapscale / (viewporty * viewscalefactor)
         * MAP_ASPECT;
-    applyMapCenter(shader);
+    applyMapCenter(viewmapshader);
   }
   
   private void applyMapCenter(Shader shader){
@@ -400,48 +467,93 @@ public class Scene1 extends Scene {
     tube.init(gl);
     ring.init(gl);
     cross.init(gl);
-    shadow = new Billboard(gl, "resources/whiteshadow2.png");
+    shadow = new Billboard(gl, "resources/shadow3.png",
+        new Vector2DDouble(0, 1), 2);
     
     Ctrlpanel.getInstance().scene = this;
     textureshadow = new SceneJCheckBox("texture shadow", false);
     Ctrlpanel.getInstance().addscenecheckbox(textureshadow);
-    possioninterval = new JSlider(10, 60, 40);
+    softshadow = new SceneJCheckBox("Soft shadow", true);
+    Ctrlpanel.getInstance().addscenecheckbox(softshadow);
+    possioninterval = new JSlider(10, 60, 20);
     Ctrlpanel.getInstance().addSlider(possioninterval, "interval");
     viewScale = new JSlider(1, 200, 1);
     Ctrlpanel.getInstance().addSlider(viewScale, "Scale");
     
     viewmapshader = shadertess;
     
+    initData(gl);
+    
+    initDataShaderUniform(gl, shader, shadertess);
+    
+    setCamera(gl);
+    setTessLevel(gl, 1);
+    
     setMapGUI(gl, shadertess);
-    setmapTex(gl, 
+    setMapTex(gl, 
         "resources/whitemap.png",
         shadertess);
-    possioninterval(intervaltopossion(currentinterval));
     
     initMarkPointList();
   }
   
+  public void initDataShaderUniform(GL2GL3 gl, Shader shader, Shader shadertess){
+    if(dataList.size() == 0){
+      return;
+    }
+    currentData = dataList.get(0);
+    currentData.use(gl);
+    shader.adduniform(gl, "weatherTex", currentData.tex.texunit);
+    shader.adduniform(gl, "shadowmap", getShadowmapTexture().texunit);
+    
+    shadertess.adduniform(gl, "weatherTex", currentData.tex.texunit);
+    shadertess.adduniform(gl, "shadowmap", getShadowmapTexture().texunit);
+    shadertess.adduniform(gl, "divide", tboard.getdivide());
+    
+    setShadowmapShaderTexture(gl, currentData.tex, "weatherTex");
+    setShadowmapShader1i(gl, tboard.getdivide(), "divide");
+    
+    updatePoission(intervaltopossion(currentinterval));
+  }
   
-  public void possioninterval(double interval) {
-    //System.out.println("possion start");
+  
+  private void setCamera(GL2GL3 gl){
+    lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
+    orthof(-1, 1, -1, 1, 0, 100);
+    setPROJ_SCALE(1 * 2);
+    updatePVMatrix(gl);
+    updatePVMatrixtess(gl);
+  }
+  
+  public void setCameraAspect(GL2GL3 gl, float aspect){
+    orthof(-1, 1, -aspect, aspect, 0, 100);
+    viewmapshader.setFloat(gl, "canvasAspect", aspect);
+    updatePVMatrix(gl);
+    updatePVMatrixtess(gl);
+    updatePoission(intervaltopossion(currentinterval));
+  }
+  
+  
+  public void updatePoission(double interval) {
     //intervalはsliderの0.01倍
-    PoissonDiskSampler pds = 
-        new PoissonDiskSampler(orthoproj[0] / viewscaling - viewcenter.x,
-            orthoproj[2] / viewscaling + viewcenter.y, 
-            orthoproj[1] / viewscaling - viewcenter.x, 
-            orthoproj[3] / viewscaling  + viewcenter.y, 
-            interval / viewscaling, func);
-
-    possion2 = pds.sample();
-    //System.out.println("possion end");
+    for(int i : choicedDataList){
+      DataSet2D data = dataList.get(i);
+      PoissonDiskSampler pds = 
+          new PoissonDiskSampler(orthoproj[0] / viewscaling - viewcenter.x,
+              orthoproj[2] / viewscaling + viewcenter.y, 
+              orthoproj[1] / viewscaling - viewcenter.x, 
+              orthoproj[3] / viewscaling  + viewcenter.y, 
+              interval / viewscaling, data.funcWindP);
+      data.updatePoisson(pds);
+    }
   }
   
   private float cylinderscale() {
     double tan = lights.get(0).posz 
         / (Math.sqrt(Math.pow(lights.get(0).posx, 2) 
-        + Math.pow(lights.get(0).posy, 2)));
-        
-    return (float)(0.9*tan * intervaltopossion(currentinterval) / (windspeedmax));
+        + Math.pow(lights.get(0).posy, 2)));    
+    return (float) (0.9 * tan 
+        * intervaltopossion(currentinterval) / (currentData.max()));
   }
   
   public void setlightdirectionrotate(double rad){
@@ -467,18 +579,6 @@ public class Scene1 extends Scene {
     light.update();
   }
   
-  private float windspeedmax(){
-    float max = 0;
-    for (int i = 0; i < windspeedu.height * windspeedu.width - 1; i++) {
-      float tmp = (float) Math.sqrt(Math.pow(windspeedu.getfloat(i), 2)
-          + Math.pow(windspeedv.getfloat(i), 2));
-      if (tmp > max) {
-        max = tmp;
-      }
-    }
-    return max;
-  }
-  
   //経度緯度から原点中心の width x height の板への射影
   private Vector2DDouble GeoCoordToWorldCoord(Vector2DDouble geocoord,
       double width, double height){
@@ -490,7 +590,7 @@ public class Scene1 extends Scene {
         (geocoord.y - CENTER_OF_LONGITUDE) / WIDTH_OF_LONGTITUDE * width);
   }
   
-  private double intervaltopossion(int value) {
+  static private double intervaltopossion(int value) {
     return (double) value / 100.0;
   }
   
@@ -501,10 +601,10 @@ public class Scene1 extends Scene {
   
   public void scene(GL2GL3 gl, Shader shader, boolean show) {
     model.glLoadIdentity();
-    for(int i=0; i < possion2.size(); i++){
+    for(int i=0; i < currentData.dist.size(); i++){
       model.glPushMatrix();
-      Vector2DDouble pos = possion2.get(i);
-      float value = (float)func0to1.getDouble(pos.x, pos.y);
+      Vector2DDouble pos = currentData.dist.get(i);
+      float value = (float)currentData.funcWind.getDouble(pos.x, pos.y);
       //System.out.println(value);
       //System.out.println(pos.x + " " + pos.y);
       //拡大
@@ -527,46 +627,36 @@ public class Scene1 extends Scene {
       model.glPopMatrix();
     }
     
-//    if(!show){
-//      model.glLoadIdentity();
-//      //model.glTranslatef(0, 0, 1);
-//      updateModelMatrix(gl, shader, model);
-//      gl.glDisable(GL2.GL_DEPTH_TEST);
-//      gl.glEnable(GL2.GL_BLEND);
-//      gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-//      shadow.rendering(gl, shader);
-//      gl.glDisable(GL2.GL_BLEND);
-//      gl.glEnable(GL2.GL_DEPTH_TEST);
-//    }
-    
-    if(!show){
-      gl.glDisable(GL2.GL_DEPTH_TEST);
-      gl.glEnable(GL2.GL_BLEND);
-      gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-      for(int i=0; i < possion2.size(); i++){
-        model.glPushMatrix();
-        Vector2DDouble pos = possion2.get(i);
-        float value = (float)func0to1.getDouble(pos.x, pos.y);
+    if(softshadow.state){
+      if(!show){
+        gl.glDisable(GL2.GL_DEPTH_TEST);
+        gl.glEnable(GL2.GL_BLEND);
+        gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+        for(int i=0; i < currentData.dist.size(); i++){
+          model.glPushMatrix();
+          Vector2DDouble pos = currentData.dist.get(i);
+          float value = (float)currentData.funcWind.getDouble(pos.x, pos.y);
 
-        //拡大
-        model.glScalef(viewscaling, viewscaling, 1);
-        //移動
-        //y成分に一時的にマイナスをつけてごまかす
-        model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
-        model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
-        cylinderscale = cylinderscale();
-        model.glScalef(1f * cylinderscale * value * 7, 
-            1f * cylinderscale * value * 7, 
-            1);
-        //縮小
-        model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
-        model.glRotatef(135, 0, 0, 1);
-        updateModelMatrix(gl, shader, model);
-        shadow.rendering(gl, shader);
-        model.glPopMatrix();
+          //拡大
+          model.glScalef(viewscaling, viewscaling, 1);
+          //移動
+          //y成分に一時的にマイナスをつけてごまかす
+          model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
+          model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
+          cylinderscale = cylinderscale();
+          model.glScalef(1f * cylinderscale * value * 7, 
+              1f * cylinderscale * value * 7, 
+              1);
+          //縮小
+          model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
+          model.glRotatef(135, 0, 0, 1);
+          updateModelMatrix(gl, shader, model);
+          shadow.rendering(gl, shader);
+          model.glPopMatrix();
+        }
+        gl.glDisable(GL2.GL_BLEND);
+        gl.glEnable(GL2.GL_DEPTH_TEST);
       }
-      gl.glDisable(GL2.GL_BLEND);
-      gl.glEnable(GL2.GL_DEPTH_TEST);
     }
     
     if (mapAdjustmode.isSelected()){
@@ -670,6 +760,22 @@ public class Scene1 extends Scene {
     gl.glFlush();
   }
   
+  public void renderMarkInScene(GL2GL3 gl, Billboard obj, Vector2DDouble pos,
+      float scale){
+    gl.glDisable(GL2.GL_DEPTH_TEST);
+    gl.glEnable(GL2.GL_BLEND);
+    gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+    shader.use(gl);
+    model.glLoadIdentity();
+    model.glTranslatef((float) pos.x, (float) pos.y, 0);
+    model.glScalef(1f / viewscaling  * scale, 1f / viewscaling * scale, 1);
+    updateModelMatrix(gl, shader, model);
+    obj.rendering(gl, shader);
+    gl.glFlush();
+    gl.glDisable(GL2.GL_BLEND);
+    gl.glEnable(GL2.GL_DEPTH_TEST);
+  }
+  
   private void renderMarkPoint(GL2GL3 gl, PMVMatrix model, Shader shader,
       List<Vector2DDouble> pointList){
     model.glLoadIdentity();
@@ -691,7 +797,7 @@ public class Scene1 extends Scene {
   @Override
   public void scenetess(GL3 gl, Shader shader, boolean show){
     if (MAP_CHANGED)
-      setmapTex(gl, PATH_TO_MAP, shader);
+      setMapTex(gl, PATH_TO_MAP, shader);
     model.glLoadIdentity();
     model.glScalef(viewscaling, viewscaling, 1);
     model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
@@ -723,10 +829,10 @@ public class Scene1 extends Scene {
     
     if(currentinterval != possioninterval.getValue()){
       currentinterval = possioninterval.getValue();
-      possioninterval(intervaltopossion(currentinterval));
+      updatePoission(intervaltopossion(currentinterval));
     }
     if(nochangeframe == 10){
-      possioninterval(intervaltopossion(currentinterval));
+      updatePoission(intervaltopossion(currentinterval));
     }
 //    for(int j = 0; j < this.lightCount(); j++){
 //      double angle = 2 * Math.PI * j / (this.lightCount()) + i/60;

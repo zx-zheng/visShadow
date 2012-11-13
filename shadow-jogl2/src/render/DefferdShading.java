@@ -1,9 +1,10 @@
-package util.render;
+package render;
+
+import gl.Semantic;
+import gl.Shader;
 
 import javax.media.opengl.GL2GL3;
 
-import util.gl.Semantic;
-import util.gl.Shader;
 
 public class DefferdShading implements RenderingPass, Semantic{
 

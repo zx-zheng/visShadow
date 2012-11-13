@@ -1,4 +1,4 @@
-package util.gl;
+package gl;
 
 import javax.media.opengl.GL2GL3;
 

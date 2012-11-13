@@ -1,11 +1,12 @@
 package gui;
 
+import gl.Shader;
+
 import java.awt.event.ItemEvent;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBox;
 
-import util.gl.Shader;
 
 public class UniformJCheckBox extends JCheckBox{
   

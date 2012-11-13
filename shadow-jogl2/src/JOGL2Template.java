@@ -11,6 +11,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import gl.*;
 import gui.Ctrlpanel;
 
 import javax.media.opengl.GLAutoDrawable;
@@ -32,18 +33,18 @@ import javax.media.opengl.awt.GLJPanel;
 import com.jogamp.opengl.util.FPSAnimator;
 
 import scene.SceneRender;
-import util.gl.*;
 
 /*
  * JOGL 2.0 Program Template For AWT applications
  */
 public class JOGL2Template implements
-MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
+MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
   private static final int CANVAS_WIDTH = 1920;  // Width of the drawable
   private static final int CANVAS_HEIGHT = 1024; // Height of the drawable
   private static final int FPS = 30;   // Animator's target frames per second
   SceneRender sr;
   Ctrlpanel ctrlpanel;
+  GLCanvas glcanvas;
 
   // Constructor to create profile, caps, drawable, animator, and initialize Frame
   public JOGL2Template() {
@@ -53,7 +54,7 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
     GLCapabilities caps = new GLCapabilities(glp);
     caps.setNumSamples(2); // enable anti aliasing - just as a example
     // Allocate a GLDrawable, based on your OpenGL capabilities.
-    GLCanvas glcanvas = new GLCanvas(caps);
+    glcanvas = new GLCanvas(caps);
     glcanvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
 
     final FPSAnimator animator = new FPSAnimator(glcanvas, FPS, true);
@@ -105,10 +106,11 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
       }
     });
 
-    jframe.getContentPane().add( glcanvas, BorderLayout.CENTER );
-    jframe.getContentPane().add(Ctrlpanel.getInstance().getPanel(),BorderLayout.EAST);
-    jframe.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
-    jframe.setVisible( true );
+    jframe.getContentPane().add(glcanvas, BorderLayout.CENTER);
+    jframe.getContentPane().add(Ctrlpanel.getInstance().getPanel(), 
+        BorderLayout.EAST);
+    jframe.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+    jframe.setVisible(true);
     animator.start();
   }
 
@@ -125,6 +127,9 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
     gl.glEnable(GL2.GL_DEPTH_TEST);
     sr = new SceneRender();
     sr.init(gl);
+    sr.CANVAS_WIDTH = glcanvas.getWidth();
+    sr.CANVAS_HEIGHT = glcanvas.getHeight();
+    
     if (drawable instanceof AWTGLAutoDrawable) {
       AWTGLAutoDrawable awtDrawable = (AWTGLAutoDrawable) drawable;
       awtDrawable.addMouseMotionListener(this);
@@ -140,6 +145,8 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
   long nLastUpdate = 0;
 
   public void display_(GLAutoDrawable drawable) {
+    sr.CANVAS_WIDTH = glcanvas.getWidth();
+    sr.CANVAS_HEIGHT = glcanvas.getHeight();
     // Your OpenGL graphic rendering codes for each refresh.
     GL4 gl = drawable.getGL().getGL4();
     //System.out.println("is EDT?"+SwingUtilities.isEventDispatchThread());
@@ -162,8 +169,7 @@ MouseMotionListener,MouseListener,MouseWheelListener,KeyListener{
 
   @Override
   public void mouseMoved(MouseEvent e){
-    // TODO Auto-generated method stub
-
+    sr.mouseMoved(e);
   }
 
 

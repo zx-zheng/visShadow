@@ -25,6 +25,7 @@ public class PoissonDiskSampler implements Sampler<Vector2DDouble>
 	private final double cellSize; // r / sqrt(n), for 2D: r / sqrt(2)
 	private final double minDist; // r
 	private final int gridWidth, gridHeight;
+	public Vector3DDouble Max = new Vector3DDouble(0, 0, -1);
 
 	/**
 	 * A safety measure - no more than this number of points are produced by ther algorithm.
@@ -158,6 +159,11 @@ public class PoissonDiskSampler implements Sampler<Vector2DDouble>
 				activeList.add(q);
 				pointList.add(q);
 				grid[qIndex.x][qIndex.y].add(new Vector3DDouble(q.x, q.y, fraction * minDist));
+				if(fraction > Max.z){
+		      Max.x = q.x;
+		      Max.y = q.y;
+		      Max.z = fraction;
+		    }
 			}
 		}
 		
@@ -174,6 +180,11 @@ public class PoissonDiskSampler implements Sampler<Vector2DDouble>
 		double yr = p0.y + dimensions.y * (d);
 
 		double fraction = distribution.getDouble(xr,  yr);
+		if(fraction > Max.z){
+		  Max.x = xr;
+		  Max.y = yr;
+		  Max.z = fraction;
+		}
 		Vector2DDouble p = new Vector2DDouble(xr, yr);
 		Vector3DDouble q = new Vector3DDouble(xr, yr, fraction * minDist);
 		Vector2DInt index = pointDoubleToInt(p, p0, cellSize);

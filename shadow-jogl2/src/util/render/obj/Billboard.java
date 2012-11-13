@@ -1,5 +1,9 @@
 package util.render.obj;
 
+import gl.Semantic;
+import gl.Shader;
+import gl.TexBindSet;
+
 import java.nio.FloatBuffer;
 
 import javax.media.opengl.GL;
@@ -10,13 +14,12 @@ import oekaki.util.Tex2D;
 import oekaki.util.TexImage;
 import oekaki.util.TexImageUtil;
 import oekaki.util.TextureBase;
-import util.gl.Semantic;
-import util.gl.Shader;
-import util.gl.TexBindSet;
-import util.render.Filter;
+import render.Filter;
+import za.co.luma.geom.Vector2DDouble;
 
-public class Billboard implements Semantic{
+public class Billboard extends Obj implements Semantic{
   
+  public static final String TEX_UNIFORM_NAME = "billBoardTex";
   protected int[] vao = new int[1];
   private int[] arraybuffer = new int[1];
   TexBindSet tbs;
@@ -29,30 +32,52 @@ public class Billboard implements Semantic{
     
   }
   
+  public Billboard(GL2GL3 gl, String img, 
+      Vector2DDouble center, double width){
+    initTex(gl, img);
+    initFrame(gl, center, width, width * tbs.tex.height / tbs.tex.width);
+  }
+  
+  public Billboard(GL2GL3 gl, String img, 
+      Vector2DDouble center, double width, Shader shader){
+    initTex(gl, img);
+    initFrame(gl, center, width, width * tbs.tex.height / tbs.tex.width);
+    shader.init(gl);
+    setShader(shader);
+  }
+  
   public Billboard(GL2GL3 gl, String img){
-    initFrame(gl);
+    this(gl, img, new Vector2DDouble(0, 0), 1.0);
+  }
+  
+  private void initTex(GL2GL3 gl, String img){
     TexImage image = TexImageUtil.loadImage(img, 4, 
         TexImage.TYPE_BYTE);
     
-    Tex2D shadow = new Tex2D(GL2.GL_RGBA, GL2.GL_BGRA,
+    Tex2D tex = new Tex2D(GL2.GL_RGBA, GL2.GL_BGRA,
         GL.GL_UNSIGNED_BYTE, image.width, image.height,
-        GL.GL_LINEAR, image.buffer, "shadow");
-    shadow.init(gl);
+        GL.GL_LINEAR, image.buffer, "BillboardTex");
+    tex.init(gl);
     
-    tbs = new TexBindSet(shadow);
+    tbs = new TexBindSet(tex);
     tbs.bind(gl);
   }
   
-  private void initFrame(GL2GL3 gl){
+  private void initFrame(GL2GL3 gl, Vector2DDouble center, 
+      double width, double height){
     gl.glGenBuffers(1, arraybuffer, 0);
     gl.glGenVertexArrays(1, vao, 0);
     float[] frame = {
-      -1f, 1f, 0,   0, 1f,
-      1f, 1f, 0,    1f, 1f,
-      -1f, -1f, 0,    0, 0,
-      1f, -1f, 0,    1f, 0
-      };
-
+        (float) (-width / 2 + center.x), (float) (height / 2 + center.y), 0,  
+        0, 1f,
+        (float) (width / 2 + center.x), (float) (height / 2 + center.y), 0,  
+        1f, 1f,
+        (float) (-width / 2 + center.x), (float) (-height / 2 + center.y), 0,  
+        0, 0,
+        (float) (width / 2 + center.x), (float) (-height / 2 + center.y), 0,  
+        1f, 0
+    };
+    
     
     gl.glBindBuffer(GL.GL_ARRAY_BUFFER, arraybuffer[0]);
     FloatBuffer frameBuffer = FloatBuffer.wrap(frame);
@@ -80,10 +105,32 @@ public class Billboard implements Semantic{
   }
   
   public void rendering(GL2GL3 gl, Shader shader){
-    gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), "shadowTex"), tbs.texunit);
+    gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), TEX_UNIFORM_NAME), 
+        tbs.texunit);
     gl.glBindVertexArray(vao[0]);
     gl.glDrawArrays(GL2.GL_TRIANGLE_STRIP, 0, 4);
     gl.glBindVertexArray(0);
+  }
+
+  @Override
+  public void rendering(GL2GL3 gl){
+    if(shader != null){
+      this.shader.use(gl);
+    }
+    gl.glUniform1i(gl.glGetUniformLocation(this.shader.getID(), TEX_UNIFORM_NAME), 
+        tbs.texunit);
+    gl.glBindVertexArray(vao[0]);
+    gl.glDrawArrays(GL2.GL_TRIANGLE_STRIP, 0, 4);
+    gl.glBindVertexArray(0);
+  }
+  
+  public void renderingWithAlpha(GL2GL3 gl){
+    gl.glDisable(GL2.GL_DEPTH_TEST);
+    gl.glEnable(GL2.GL_BLEND);
+    gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+    this.rendering(gl);
+    gl.glDisable(GL2.GL_BLEND);
+    gl.glEnable(GL2.GL_DEPTH_TEST);
   }
   
 }

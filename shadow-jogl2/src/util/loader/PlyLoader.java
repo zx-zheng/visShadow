@@ -1,10 +1,11 @@
 package util.loader;
 
+import gl.Semantic;
+
 import java.nio.*;
 
 import javax.media.opengl.*;
 
-import util.gl.Semantic;
 
 public class PlyLoader extends Loader implements Semantic{
 

@@ -1,11 +1,12 @@
 package gui;
 
+import gl.Shader;
+
 import java.util.ArrayList;
 
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 
-import util.gl.Shader;
 
 public class UniformJSlider extends JSlider{
 

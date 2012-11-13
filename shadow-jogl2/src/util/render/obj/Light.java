@@ -6,9 +6,10 @@ import java.nio.IntBuffer;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
 
+import render.Vec3;
+import render.Vec3d;
+
 import util.loader.PlyLoader;
-import util.render.Vec3;
-import util.render.Vec3d;
 
 import com.jogamp.opengl.util.PMVMatrix;
 

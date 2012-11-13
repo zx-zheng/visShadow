@@ -1,4 +1,4 @@
-package util.render;
+package render;
 
 public class ObjManager {
 

@@ -1,5 +1,6 @@
-package util.render;
+package render;
 
+import gl.*;
 import gui.Ctrlpanel;
 
 import java.awt.event.ActionEvent;
@@ -12,7 +13,6 @@ import javax.swing.JComboBox;
 
 import oekaki.util.*;
 
-import util.gl.*;
 import util.render.obj.Light;
 
 import com.jogamp.opengl.util.PMVMatrix;
@@ -20,7 +20,7 @@ import com.jogamp.opengl.util.PMVMatrix;
 
 public abstract class Scene implements RenderingPass {
   
-  Shader shadowmapshader, shadowmapshadertess, 
+  protected Shader shadowmapshader, shadowmapshadertess, 
   shader, shadertess;
   int smapwidth, smapheight;
   protected int realLightcount, virtualLightcount;
@@ -46,7 +46,7 @@ public abstract class Scene implements RenderingPass {
   uniformlightscolor, uniformlightscolortess,
   uniformlightsattr, uniformlightsattrtess;
   
-  protected float[] orthoproj;
+  protected float[] orthoproj = new float[4];
   
   public Scene(){
     pvmat = new PMVMatrix();
@@ -102,7 +102,7 @@ public abstract class Scene implements RenderingPass {
     smapwidth = width;
     smapheight = height;
     
-    Tex2DArray shadowmap = new Tex2DArray(GL2.GL_RGB16F, GL2.GL_RGB,
+    Tex2DArray shadowmap = new Tex2DArray(GL2.GL_RGB16, GL2.GL_RGB,
         GL.GL_FLOAT, smapwidth, smapheight, realLightcount,
         GL.GL_LINEAR, "shadowmap");
     Tex2DArray shadowmapdepth = 
@@ -342,7 +342,7 @@ public abstract class Scene implements RenderingPass {
         pvmat.glGetMatrixf(GL2.GL_MODELVIEW));
     gl.glUniformMatrix4fv(uniformproj, 1, false, 
         pvmat.glGetMatrixf(GL2.GL_PROJECTION));
-    shader.unuse(gl);
+    Shader.unuse(gl);
   } 
   public void updatePVMatrixtess(GL2GL3 gl){
     shadertess.use(gl);
@@ -350,7 +350,7 @@ public abstract class Scene implements RenderingPass {
         pvmat.glGetMatrixf(GL2.GL_MODELVIEW));
     gl.glUniformMatrix4fv(uniformprojtess, 1, false, 
         pvmat.glGetMatrixf(GL2.GL_PROJECTION));
-    shadertess.unuse(gl);
+    Shader.unuse(gl);
   }
   
   public void lookat(float eyeX, float eyeY, float eyeZ, 
@@ -411,10 +411,10 @@ public abstract class Scene implements RenderingPass {
       float top,
       float zNear,
       float zFar){
-    orthoproj = new float[4];
     orthoproj[0] = left; orthoproj[1] = right;
     orthoproj[2] = bottom; orthoproj[3] = top;
     pvmat.glMatrixMode(GL2.GL_PROJECTION);
+    pvmat.glLoadIdentity();
     pvmat.glOrthof(left, right, bottom, top, zNear, zFar);
     pvmat.update();
   }

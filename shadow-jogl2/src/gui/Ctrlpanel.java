@@ -1,5 +1,8 @@
 package gui;
 
+import gl.Shader;
+import gl.TexUnitManager;
+
 import java.awt.Dimension;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
@@ -18,9 +21,8 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import util.gl.Shader;
-import util.gl.TexUnitManager;
-import util.render.Scene;
+import render.Scene;
+
 
 
 public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{

@@ -1,4 +1,4 @@
-package util.gl;
+package gl;
 
 import java.util.*;
 import javax.media.opengl.*;

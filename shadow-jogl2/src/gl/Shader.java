@@ -1,4 +1,4 @@
-package util.gl;
+package gl;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -7,13 +7,21 @@ import java.util.Stack;
 
 import javax.media.opengl.*;
 
+import com.jogamp.opengl.util.PMVMatrix;
+
 public class Shader{
+  
+  static int currentShaderID;
+  private boolean isInitialized = false;
   int shaderID;
+  String SHADER_NAME;
   String vsource, fsource, csource, esource, gsource;
   ShaderProgram ShaderProgram;
   Stack<GLUniformData> uniformstack = new Stack<GLUniformData>();
   HashMap<String, GLUniformData> uniformdatamap = 
       new HashMap<String, GLUniformData>();
+  public enum MatrixType {MODEL, VIEW};
+  int UNIFORM_MODEL_MATRIX, UNIFORM_VIEW_MATRIX;
 
   public Shader(){
    
@@ -27,9 +35,21 @@ public class Shader{
     this.esource = esource;
     this.gsource = gsource;
     this.fsource = fsource;
+    SHADER_NAME = "NoName";
+  }
+  
+  public Shader(String vsource, String csource, String esource,
+      String gsource, String fsource, String name){
+    this(vsource, csource, esource, gsource, fsource);
+    SHADER_NAME = name;
   }
 
   public void init(GL2GL3 gl){
+    if(isInitialized){
+      return;
+    }else{
+      isInitialized = true;
+    }
     ShaderProgram = new ShaderProgram(gl);
     if(vsource != null) ShaderProgram.make_vert(vsource);
     if(csource != null) ShaderProgram.make_ctrl(csource);
@@ -38,15 +58,52 @@ public class Shader{
     if(fsource != null) ShaderProgram.make_frag(fsource);
     ShaderProgram.link_valid();
     shaderID = ShaderProgram.getid();
+    initUniformLocation(gl);
+  }
+  
+  private void initUniformLocation(GL2GL3 gl){
+    this.use(gl);
+    UNIFORM_MODEL_MATRIX = gl.glGetUniformLocation(shaderID, "model");
+    UNIFORM_VIEW_MATRIX = gl.glGetUniformLocation(shaderID, "view");
+    if(UNIFORM_MODEL_MATRIX == -1 
+        || UNIFORM_VIEW_MATRIX == -1){
+      System.out.println("Shader " + SHADER_NAME + " ID:" + shaderID  
+          + ": Shader matrix uniform location error");
+    }
+    Shader.unuse(gl);
+  }
+  
+  public void updateMatrix(GL2GL3 gl, PMVMatrix mat, MatrixType type){
+    if(currentShaderID != shaderID){
+      System.out.println("Shader Uniform error " + SHADER_NAME + " : shader is not in use");
+      return;
+    }
+    
+    mat.update();
+    
+    switch (type) {
+    case MODEL:
+      gl.glUniformMatrix4fv(UNIFORM_MODEL_MATRIX, 1, false, 
+          mat.glGetMatrixf());
+      break;
+    case VIEW:
+      gl.glUniformMatrix4fv(UNIFORM_VIEW_MATRIX, 1, false, 
+          mat.glGetMatrixf());
+      break;
+    }
   }
 
   public void use(GL2GL3 gl){
-    gl.glUseProgram(shaderID);
-    updateuniforms(gl);
+    if(Shader.currentShaderID != shaderID){
+      currentShaderID = shaderID;
+      gl.glUseProgram(shaderID);
+      updateuniforms(gl);
+    }
   }
   
   public static void unuse(GL2GL3 gl){
     gl.glUseProgram(0);
+    currentShaderID = 0;
   }
   
   public void adduniform(GL2GL3 gl, String name, int val){

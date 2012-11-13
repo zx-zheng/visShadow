@@ -1,4 +1,4 @@
-package util.gl;
+package gl;
 
 public interface Semantic{
   

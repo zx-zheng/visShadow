@@ -1,4 +1,4 @@
-package util.gl;
+package gl;
 
 import javax.media.opengl.*;
 //import com.jogamp.opengl.util.*;

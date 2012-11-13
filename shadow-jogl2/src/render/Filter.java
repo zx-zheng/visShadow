@@ -1,13 +1,14 @@
-package util.render;
+package render;
+
+import gl.FBO;
+import gl.FilterShader;
+import gl.Semantic;
+import gl.Shader;
+import gl.TexBindSet;
 
 import java.nio.FloatBuffer;
 import javax.media.opengl.*;
 
-import util.gl.FBO;
-import util.gl.FilterShader;
-import util.gl.Semantic;
-import util.gl.Shader;
-import util.gl.TexBindSet;
 
 public class Filter implements RenderingPass, Semantic{
   

@@ -14,7 +14,7 @@ uniform sampler2DArray shadowmap;
 uniform sampler2D weatherTex, mapTex;
 uniform float gamma;
 uniform int L, lab_a, lab_b, shaderange, shadowrange;
-uniform float aspect_Y;
+uniform float aspect_Y, canvasAspect = 1;
 uniform int mapscaling = 200;
 uniform float mapoffsetx, mapoffsety, viewoffsetx, viewoffsety;
 uniform float viewscaling = 1;
@@ -195,7 +195,7 @@ vec3 shadecmb(vec3 shade, vec3 shadecw, float shadewide){
 
 vec2 maptexcoordtransform(vec2 texcoord, float scale, 
 			  vec2 offset, vec2 viewoffset){
-  vec2 aspect = vec2(1, aspect_Y);
+  vec2 aspect = vec2(1, aspect_Y * canvasAspect);
   //float scaling = mapscaling * 0.02;
   float scaling = pow(2, (mapscaling - 200) * 0.05);
   //scaling = 1;
@@ -291,9 +291,9 @@ void main(){
       + (100 - mapalpha) * 0.01 * visualizedcolor;
   } else {
     if(mapcolor.x > 0.9){
-      Color = (0.4 * shadow + 0.6) * visualizedcolor;
+      Color = (0.39 * shadow + 0.61) * visualizedcolor;
     } else {
-      Color = (0.4 * shadow + 0.6) * mapcolor;
+      Color = (0.39 * shadow + 0.61) * mapcolor;
     }
   }
   

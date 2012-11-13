@@ -1,8 +1,9 @@
-package util.render;
+package render;
+
+import gl.Shader;
 
 import javax.media.opengl.*;
 
-import util.gl.Shader;
 
 public interface RenderingPass {
   

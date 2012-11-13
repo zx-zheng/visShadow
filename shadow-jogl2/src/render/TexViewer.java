@@ -1,8 +1,9 @@
-package util.render;
+package render;
+
+import gl.TexBindSet;
 
 import javax.media.opengl.*;
 
-import util.gl.TexBindSet;
 
 public class TexViewer extends Filter{
   
