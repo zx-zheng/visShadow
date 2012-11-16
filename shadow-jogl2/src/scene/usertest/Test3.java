@@ -5,8 +5,8 @@ import java.awt.event.MouseEvent;
 
 import javax.media.opengl.GL2GL3;
 
-import scene.Scene1;
 import scene.SceneOrganizer;
+import scene.oldTypeScene.Scene1;
 import util.DataSet2D;
 import za.co.luma.geom.Vector3DDouble;
 
@@ -15,8 +15,6 @@ public class Test3 extends SceneOrganizer{
   Scene1 scene;
   boolean SHOW_QUESTION = true;
   int PROGRESS_FRAME = 0;
-  long ELAPSED_TIME = 0;
-  long START_TIME = 0;
   boolean measuring = false;
   boolean NEXT_PROBLEM = false;
   DataSet2D data;

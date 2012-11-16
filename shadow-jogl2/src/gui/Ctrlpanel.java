@@ -21,7 +21,7 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import render.Scene;
+import scene.oldTypeScene.Scene;
 
 
 

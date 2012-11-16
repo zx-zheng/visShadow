@@ -5,8 +5,9 @@ import java.awt.event.MouseEvent;
 
 import javax.media.opengl.*;
 
-import render.Scene;
-import render.TexViewer;
+import scene.oldTypeScene.Scene;
+import scene.oldTypeScene.Scene1;
+import scene.templateScene.TexViewer;
 
 
 public class ViewResult extends SceneOrganizer {

@@ -1,8 +1,9 @@
-package render;
+package scene.templateScene;
 
 import gl.TexBindSet;
 
 import javax.media.opengl.*;
+
 
 
 public class TexViewer extends Filter{
@@ -12,12 +13,12 @@ public class TexViewer extends Filter{
   uniformchannel, currentch = -1;
 
   public TexViewer(){
-    super("src/util/render/TextureViewer/vert.c",
-        "src/util/render/TextureViewer/frag.c");
+    super("resources/ShaderSource/BaseShaders/TextureViewer/vert.c",
+        "resources/ShaderSource/BaseShaders/TextureViewer/frag.c");
   }
   
   public TexViewer(String fsource){
-    super("src/util/render/TextureViewer/vert.c",
+    super("resources/ShaderSource/BaseShaders/TextureViewer/vert.c",
         fsource);
   }
   

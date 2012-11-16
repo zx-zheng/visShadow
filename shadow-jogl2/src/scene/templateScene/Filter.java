@@ -1,4 +1,4 @@
-package render;
+package scene.templateScene;
 
 import gl.FBO;
 import gl.FilterShader;
@@ -8,6 +8,8 @@ import gl.TexBindSet;
 
 import java.nio.FloatBuffer;
 import javax.media.opengl.*;
+
+import render.RenderingPass;
 
 
 public class Filter implements RenderingPass, Semantic{

@@ -1,4 +1,4 @@
-package render;
+package scene.oldTypeScene;
 
 import gl.*;
 import gui.Ctrlpanel;
@@ -12,8 +12,12 @@ import javax.media.opengl.*;
 import javax.swing.JComboBox;
 
 import oekaki.util.*;
+import render.ObjManager;
+import render.RenderingPass;
+import scene.obj.Light;
+import util.math.Vec3;
+import util.math.Vec3d;
 
-import util.render.obj.Light;
 
 import com.jogamp.opengl.util.PMVMatrix;
 
@@ -27,11 +31,11 @@ public abstract class Scene implements RenderingPass {
   FBO smapfbo;
   TexBindSet shadowmapB;
   
-  String smapvsrc = "src/util/render/Shadowmap/vert.c",
-      smapcsrc = "src/util/render/Shadowmap/ctrl.c",
-      smapesrc = "src/util/render/Shadowmap/eval.c",
-      smapgsrc = "src/util/render/Shadowmap/geom.c",
-      smapfsrc = "src/util/render/Shadowmap/frag.c";
+  String smapvsrc = "resources/ShaderSource/BaseShaders/Shadowmap/vert.c",
+      smapcsrc = "resources/ShaderSource/BaseShaders/Shadowmap/ctrl.c",
+      smapesrc = "resources/ShaderSource/BaseShaders/Shadowmap/eval.c",
+      smapgsrc = "resources/ShaderSource/BaseShaders/Shadowmap/geom.c",
+      smapfsrc = "resources/ShaderSource/BaseShaders/Shadowmap/frag.c";
   
   private final TexUnitManager tum = TexUnitManager.getInstance();
   ObjManager om;
@@ -118,7 +122,7 @@ public abstract class Scene implements RenderingPass {
     
     /*シャドウマップ*/
     shadowmapshader = new Shader(
-        "src/util/render/Shadowmap/vertsimple.c",
+        "resources/ShaderSource/BaseShaders/Shadowmap/vertsimple.c",
         null,
         null,
         smapgsrc,        

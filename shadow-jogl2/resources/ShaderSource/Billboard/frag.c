@@ -4,7 +4,7 @@
 
 layout(location = FRAG_COLOR, index = 0) out vec4 Color;
 
-
+uniform float alpha = 1;
 uniform sampler2D billBoardTex;
 
 in geom{
@@ -14,5 +14,6 @@ in geom{
 }Geom;
 
 void main(){
-Color = texture(billBoardTex, Geom.texcoord0);
+  Color = texture(billBoardTex, Geom.texcoord0);
+  Color.w *= alpha;
 }

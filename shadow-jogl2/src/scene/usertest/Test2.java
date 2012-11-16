@@ -6,8 +6,8 @@ import java.awt.event.MouseEvent;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
 
-import scene.Scene1;
 import scene.SceneOrganizer;
+import scene.oldTypeScene.Scene1;
 import util.DataSet2D;
 import za.co.luma.geom.Vector2DDouble;
 import za.co.luma.geom.Vector2DInt;
@@ -20,9 +20,6 @@ public class Test2 extends SceneOrganizer{
   Scene1 scene;
   boolean SHOW_QUESTION = true;
   int PROGRESS_FRAME = 0;
-  long ELAPSED_TIME = 0;
-  long START_TIME = 0;
-  boolean measuring = false;
   boolean NEXT_PROBLEM = false;
   DataSet2D data;
   Vector3DDouble ansPoint;
@@ -50,9 +47,9 @@ public class Test2 extends SceneOrganizer{
       //scene.setDataShaderUniform(gl, choiceList.get(answerNum));
       scene.renderingToWindow(gl, 0, 0,
           CANVAS_WIDTH, CANVAS_HEIGHT, false);
-      if(!measuring){
-        START_TIME = System.currentTimeMillis();
-        measuring = true;
+      if(!isMeasuring){
+        startTime = System.currentTimeMillis();
+        isMeasuring = true;
       }
     }
   }
@@ -84,9 +81,9 @@ public class Test2 extends SceneOrganizer{
     }
       
     SHOW_QUESTION = false;
-    ELAPSED_TIME = System.currentTimeMillis() - START_TIME;
-    System.out.println(ELAPSED_TIME / 1000.0);
-    measuring = false;
+    elapsedTime = System.currentTimeMillis() - startTime;
+    System.out.println(elapsedTime / 1000.0);
+    isMeasuring = false;
     NEXT_PROBLEM = true;
   }
   

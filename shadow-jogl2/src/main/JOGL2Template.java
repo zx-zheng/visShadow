@@ -1,3 +1,4 @@
+package main;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -151,15 +152,15 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     GL4 gl = drawable.getGL().getGL4();
     //System.out.println("is EDT?"+SwingUtilities.isEventDispatchThread());
     sr.rendering(gl);
-    if(nFrame++ > 200) {
-      if(nLastUpdate != 0) {
-        long nTimeMS = System.currentTimeMillis() - nLastUpdate ;
-        System.out.println(nFrame + " in " + nTimeMS + "msec (" +
-            nFrame * 1000 / nTimeMS + " FPS)") ;
-      } 
-      nFrame = 0 ;
-      nLastUpdate = System.currentTimeMillis() ;
-    }
+//    if(nFrame++ > 200) {
+//      if(nLastUpdate != 0) {
+//        long nTimeMS = System.currentTimeMillis() - nLastUpdate ;
+//        System.out.println(nFrame + " in " + nTimeMS + "msec (" +
+//            nFrame * 1000 / nTimeMS + " FPS)") ;
+//      } 
+//      nFrame = 0 ;
+//      nLastUpdate = System.currentTimeMillis() ;
+//    }
   }
 
   @Override

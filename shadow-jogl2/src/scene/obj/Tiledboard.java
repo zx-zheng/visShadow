@@ -1,4 +1,4 @@
-package util.render.obj;
+package scene.obj;
 
 import gl.Semantic;
 

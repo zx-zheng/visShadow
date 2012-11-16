@@ -11,9 +11,9 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
 
 import oekaki.util.Tex2D;
+import scene.obj.Tiledboard;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
-import util.render.obj.Tiledboard;
 import za.co.luma.geom.Vector2DDouble;
 import za.co.luma.math.function.ByteBufferFloat2Wrapper2D;
 import za.co.luma.math.function.ByteBufferFloatWrapper2D;

@@ -1,4 +1,4 @@
-package util.render.obj;
+package scene.obj;
 
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -6,17 +6,17 @@ import java.nio.IntBuffer;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
 
-import render.Vec3;
-import render.Vec3d;
 
 import util.loader.PlyLoader;
+import util.math.Vec3;
+import util.math.Vec3d;
 
 import com.jogamp.opengl.util.PMVMatrix;
 
 public class Light extends Obj {
   public PMVMatrix pmmat;
   public double centerx,centery,centerz, upx, upy, upz;
-  static PlyLoader obj = new PlyLoader("src/util/loader/ObjData/box.ply");
+  static PlyLoader obj = new PlyLoader("resources/Objdata/box.ply");
   Vec3d color;
   public double intensity;
   public int[] attribute = new int[4]; 

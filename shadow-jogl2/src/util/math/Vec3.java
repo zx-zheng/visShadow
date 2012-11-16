@@ -1,4 +1,4 @@
-package render;
+package util.math;
 
 public class Vec3{
   public float x;

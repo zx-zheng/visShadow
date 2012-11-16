@@ -1,4 +1,4 @@
-package render;
+package util.math;
 
 public class Vec3d{
   public double x;

@@ -1,4 +1,4 @@
-package scene;
+package scene.oldTypeScene;
 import gl.Shader;
 import gl.TexBindSet;
 import gl.TexUnitManager;
@@ -35,15 +35,14 @@ import com.jogamp.opengl.util.PMVMatrix;
 import oekaki.util.Tex2D;
 import oekaki.util.TexImage;
 import oekaki.util.TexImageUtil;
-import render.Scene;
 
+import scene.obj.Billboard;
+import scene.obj.Light;
+import scene.obj.Tiledboard;
 import util.DataSet2D;
 import util.loader.Load2Dfloat;
 import util.loader.PlyLoader;
 import util.loader.Spline;
-import util.render.obj.Billboard;
-import util.render.obj.Light;
-import util.render.obj.Tiledboard;
 import za.co.luma.geom.Vector2DDouble;
 import za.co.luma.geom.Vector2DInt;
 import za.co.luma.math.function.ByteBufferFloat2Wrapper2D;
@@ -55,14 +54,14 @@ import za.co.luma.math.sampling.UniformPoissonDiskSampler;
 
 public class Scene1 extends Scene {
   
-  PlyLoader box = new PlyLoader("src/util/loader/ObjData/box.ply");
-  PlyLoader board = new PlyLoader("src/util/loader/ObjData/board.ply");
-  PlyLoader sphere = new PlyLoader("src/util/loader/ObjData/sphere3.ply");
-  PlyLoader hex = new PlyLoader("src/util/loader/ObjData/square6.ply");
-  PlyLoader plus = new PlyLoader("src/util/loader/ObjData/minus.ply");
-  PlyLoader tube = new PlyLoader("src/util/loader/ObjData/tube6.ply");
-  PlyLoader ring = new PlyLoader("src/util/loader/ObjData/ring.ply");
-  PlyLoader cross = new PlyLoader("src/util/loader/ObjData/cross3.ply");
+  PlyLoader box = new PlyLoader("resources/Objdata/box.ply");
+  PlyLoader board = new PlyLoader("resources/Objdata/board.ply");
+  PlyLoader sphere = new PlyLoader("resources/Objdata/sphere3.ply");
+  PlyLoader hex = new PlyLoader("resources/Objdata/square6.ply");
+  PlyLoader plus = new PlyLoader("resources/Objdata/minus.ply");
+  PlyLoader tube = new PlyLoader("resources/Objdata/tube6.ply");
+  PlyLoader ring = new PlyLoader("resources/Objdata/ring.ply");
+  PlyLoader cross = new PlyLoader("resources/Objdata/cross3.ply");
 
   Billboard shadow;
   private int VIEWPORTX, VIEWPORTY;
@@ -107,7 +106,7 @@ public class Scene1 extends Scene {
   private ArrayList<Integer> dataIndexList = new ArrayList<Integer>(),
       choicedDataList = new ArrayList<Integer>(),
       usedDataList = new ArrayList<Integer>();
-  private DataSet2D currentData;
+  private DataSet2D currentData, currentData2;
   private int dataSetCount;
   
   Shader viewmapshader;
@@ -268,6 +267,23 @@ public class Scene1 extends Scene {
     setShadowmapShaderTexture(gl, currentData.tex, "weatherTex");
     setShadowmapShader1i(gl, tboard.getdivide(), "divide");
   }
+  
+  public void setDataShaderUniform(GL2GL3 gl, int index, int index2){
+    currentData = dataList.get(index);
+    currentData.use(gl);
+    
+    currentData2 = dataList.get(index2);
+    
+    shader.setuniform("weatherTex", currentData2.tex.texunit);
+    shader.setuniform("shadowmap", getShadowmapTexture().texunit);
+    
+    shadertess.setuniform("weatherTex", currentData2.tex.texunit);
+    shadertess.setuniform("shadowmap", getShadowmapTexture().texunit);
+    shadertess.setuniform("divide", tboard.getdivide());
+    
+    setShadowmapShaderTexture(gl, currentData2.tex, "weatherTex");
+    setShadowmapShader1i(gl, tboard.getdivide(), "divide");
+  }
  
   
   public void initMarkPointList(){
@@ -335,8 +351,7 @@ public class Scene1 extends Scene {
           mapImageChooser.showOpenDialog(Ctrlpanel.getInstance().getPanel());
       if (returnVal == JFileChooser.APPROVE_OPTION) {
         File file = mapImageChooser.getSelectedFile();
-        //setmapTex(gl, "resources/" + file.getName(), viewmapshader);
-        PATH_TO_MAP = "resources/" + file.getName();
+        PATH_TO_MAP = "resources/Image/MapImage/" + file.getName();
         MAP_CHANGED = true;
       }
     }
@@ -430,7 +445,7 @@ public class Scene1 extends Scene {
     openMapImage = new JButton("Open Map Image");
     Ctrlpanel.getInstance().addButton(openMapImage);
     
-    mapImageChooser = new JFileChooser("resources");
+    mapImageChooser = new JFileChooser("resources/Image/MapImage");
     mapImageChooser.setFileFilter(
         new FileNameExtensionFilter("*.png", "png"));
   }
@@ -467,7 +482,7 @@ public class Scene1 extends Scene {
     tube.init(gl);
     ring.init(gl);
     cross.init(gl);
-    shadow = new Billboard(gl, "resources/shadow3.png",
+    shadow = new Billboard(gl, "resources/Image/TextureImage/shadow4.png",
         new Vector2DDouble(0, 1), 2);
     
     Ctrlpanel.getInstance().scene = this;
@@ -491,7 +506,7 @@ public class Scene1 extends Scene {
     
     setMapGUI(gl, shadertess);
     setMapTex(gl, 
-        "resources/whitemap.png",
+        "resources/Image/MapImage/whitemap.png",
         shadertess);
     
     initMarkPointList();

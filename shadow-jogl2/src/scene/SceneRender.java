@@ -20,13 +20,16 @@ import com.jogamp.opengl.util.awt.Screenshot;
 import oekaki.util.*;
 
 import render.*;
+import scene.obj.Tiledboard;
+import scene.oldTypeScene.Scene1;
+import scene.templateScene.Filter;
+import scene.templateScene.TexViewer;
 import scene.usertest.ColorMosaic;
 import scene.usertest.PatternMatchTest;
 import scene.usertest.Test1;
 import scene.usertest.Test2;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
-import util.render.obj.Tiledboard;
 
 public class SceneRender extends GuiVariables{
   
@@ -65,7 +68,7 @@ public class SceneRender extends GuiVariables{
     texviewer = new TexViewer();
     texviewer.init(gl);
     
-    fxaa = new Filter("src/util/render/FXAA/vert.c", "src/util/render/FXAA/frag.c");
+    fxaa = new Filter("resources/ShaderSource/FXAA/vert.c", "resources/ShaderSource/FXAA/frag.c");
     fxaa.init(gl);
     
     //String filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
@@ -100,20 +103,22 @@ public class SceneRender extends GuiVariables{
 //    scene.lights.get(2).orthof(-5, 5, -5, 5, 0, 100);
 
     
-    shader = new Shader("src/SimpleShader/vert.c",
-        null, null, null, "src/SimpleShader/frag.c");
+    shader = new Shader("resources/ShaderSource/BaseShaders/SimpleShader/vert.c",
+        null, null, null, "resources/ShaderSource/BaseShaders/SimpleShader/frag.c");
     shader.init(gl);
     
-    shadowmapping = new Shader("src/ShadowMapping/vert.c",
-        null, null, "src/ShadowMapping/geom.c",
-        "src/ShadowMapping/fragsimple.c");
+    shadowmapping = new Shader("resources/ShaderSource/ShadowMapping/vert.c",
+        null, null, "resources/ShaderSource/ShadowMapping/geom.c",
+        "resources/ShaderSource/ShadowMapping/fragsimple.c");
     shadowmapping.init(gl);
     shadowmapping.use(gl);
     
     //tess evalシェーダーはシャドウマップのものを使う
-    shadowmappingtess = new Shader("src/ShadowMapping/vert.c",
-        "src/ShadowMapping/ctrl.c", "src/util/render/Shadowmap/eval.c", "src/ShadowMapping/geom.c",
-        "src/ShadowMapping/frag.c");
+    shadowmappingtess = new Shader("resources/ShaderSource/ShadowMapping/vert.c",
+        "resources/ShaderSource/ShadowMapping/ctrl.c", 
+        "resources/ShaderSource/BaseShaders/Shadowmap/eval.c", 
+        "resources/ShaderSource/ShadowMapping/geom.c",
+        "resources/ShaderSource/ShadowMapping/frag.c");
     shadowmappingtess.init(gl);
     
     shadowmappingtess.adduniform(gl, "shadowswitch", 0);
@@ -171,7 +176,7 @@ public class SceneRender extends GuiVariables{
 //    test2 = new Test2(gl, scene);
 //    currentSO = test2;
     
-    PatternMatchTest pmt = new PatternMatchTest();
+    PatternMatchTest pmt = new PatternMatchTest(8);
     pmt.init(gl);
     currentSO = pmt;
   }

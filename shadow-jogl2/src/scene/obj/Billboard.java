@@ -1,4 +1,4 @@
-package util.render.obj;
+package scene.obj;
 
 import gl.Semantic;
 import gl.Shader;
@@ -14,12 +14,14 @@ import oekaki.util.Tex2D;
 import oekaki.util.TexImage;
 import oekaki.util.TexImageUtil;
 import oekaki.util.TextureBase;
-import render.Filter;
+import scene.templateScene.Filter;
 import za.co.luma.geom.Vector2DDouble;
 
 public class Billboard extends Obj implements Semantic{
   
   public static final String TEX_UNIFORM_NAME = "billBoardTex";
+  static final String UNIFORM_ALPHA = "alpha";
+  private float alpha = 1;
   protected int[] vao = new int[1];
   private int[] arraybuffer = new int[1];
   TexBindSet tbs;
@@ -104,6 +106,10 @@ public class Billboard extends Obj implements Semantic{
     gl.glBindVertexArray(0);
   }
   
+  public void setAlpha(float alpha){
+    this.alpha = alpha;
+  }
+  
   public void rendering(GL2GL3 gl, Shader shader){
     gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), TEX_UNIFORM_NAME), 
         tbs.texunit);
@@ -125,10 +131,21 @@ public class Billboard extends Obj implements Semantic{
   }
   
   public void renderingWithAlpha(GL2GL3 gl){
+    gl.glUniform1f(gl.glGetUniformLocation(shader.getID(), UNIFORM_ALPHA), alpha);
     gl.glDisable(GL2.GL_DEPTH_TEST);
     gl.glEnable(GL2.GL_BLEND);
     gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
     this.rendering(gl);
+    gl.glDisable(GL2.GL_BLEND);
+    gl.glEnable(GL2.GL_DEPTH_TEST);
+  }
+  
+  public void renderingWithAlpha(GL2GL3 gl, Shader shader){
+    gl.glUniform1f(gl.glGetUniformLocation(shader.getID(), UNIFORM_ALPHA), alpha);
+    gl.glDisable(GL2.GL_DEPTH_TEST);
+    gl.glEnable(GL2.GL_BLEND);
+    gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+    this.rendering(gl, shader);
     gl.glDisable(GL2.GL_BLEND);
     gl.glEnable(GL2.GL_DEPTH_TEST);
   }

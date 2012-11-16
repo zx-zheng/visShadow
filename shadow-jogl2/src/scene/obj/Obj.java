@@ -1,4 +1,4 @@
-package util.render.obj;
+package scene.obj;
 
 import javax.media.opengl.GL2GL3;
 
