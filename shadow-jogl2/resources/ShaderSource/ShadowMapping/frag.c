@@ -113,9 +113,9 @@ vec3 valuetoshadowcolorRGshadeBY(float value, float shadewide, float shadow){
   Color Red-Green  Shade Blue-Yellow+L
  *-----------------------------------------------------------------*/
 vec3 valuetoshadowcolorRGshadeBYL(float value, float shadewide, float shadow){
-  float l = L + shadewide *shaderange*1*1 - shadowrange*(1-shadow) * 1, 
-    a = (value-0.5)* lab_a * 1, b = 1*lab_b*shadewide * 1;
-  vec3 xyz = LabtoXYZ(l,a,b);
+  float l = L;// + shadewide *shaderange*1*1 - shadowrange*(1-shadow) * 1;
+  float a = (value-0.5)* lab_a * 1, b = 1*lab_b* shadewide * 1;
+  vec3 xyz = LabtoXYZ(L,a,b);
   //return vec3(l/100);
   return RGBnonlinearRGB(XYZtoRGB(xyz));
 }
@@ -128,7 +128,6 @@ vec3 valuetoshadowcolorRGYG(float shadow, float value, float value2){
     a = (value-0.5)*100*1.4, b = (value2-0.5)*100*1.4;
   vec3 xyz = LabtoXYZ(l,a,b);
   return RGBnonlinearRGB(XYZtoRGB(xyz));
-  //return vec3(1);
 }
 
 vec3 valuetocolorYB(float value){
@@ -271,10 +270,10 @@ void main(){
   }
   //*/
   temperature = (temperature - 273)/25.0;
-  vec3 color = valuetocolorYB(temperature).xyz;
+  //vec3 color = valuetocolorYB(temperature).xyz;
 
-  float ratio = 0.5;
-  float uplightshade = dot(Geom.normal, vec3(0,0,1));
+  //float ratio = 0.5;
+  //float uplightshade = dot(Geom.normal, vec3(0,0,1));
 
   if(shadowswitch == 0)shadow = 1;
 
@@ -282,21 +281,21 @@ void main(){
 		   maptexcoordtransform(Geom.screentexcoord, 1, 
 					vec2(mapoffsetx, mapoffsety),
 					vec2(viewoffsetx, viewoffsety)));
-
   vec4 visualizedcolor = 
-    vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow),1);
+    vec4(valuetoshadowcolorRGshadeBYL(temperature, shadewide, shadow), 1);
+  //visualizedcolor = vec4(1);
 
   if(mapadjustmode == 1){
     Color = mapalpha * 0.01 * mapcolor 
       + (100 - mapalpha) * 0.01 * visualizedcolor;
   } else {
     if(mapcolor.x > 0.9){
-      Color = (0.39 * shadow + 0.61) * visualizedcolor;
+      Color = (0.39 * 1 + 0.61) * visualizedcolor;
     } else {
       Color = (0.39 * shadow + 0.61) * mapcolor;
     }
   }
-  
+
   //Color = vec4(color * (shade * (0.3 * shadow + 0.4) + 0.3) , 1);
   //Color = vec4(color * (shade * (0.6) + 0.4 - (1-shadow)*0.4 * sin(3.14/2*shade)) , 1);
   //Color = vec4(color * (0.2 + shadow * 0.8 *shade + (1-shadow) * 0.2 * pow(shade, gamma)), 1);

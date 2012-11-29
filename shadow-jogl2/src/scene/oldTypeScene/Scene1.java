@@ -100,7 +100,7 @@ public class Scene1 extends Scene {
   
   private UniformJCheckBox mapAdjustmode;
   
-  private List markPointList;
+  private List<Vector2DDouble> markPointList;
   
   public ArrayList<DataSet2D> dataList;
   private ArrayList<Integer> dataIndexList = new ArrayList<Integer>(),
@@ -183,8 +183,8 @@ public class Scene1 extends Scene {
   private void initData(GL2GL3 gl){
     dataList = new ArrayList<DataSet2D>();
     dataSetCount = 0;
-//    String filepath = "/home/michael/zheng/Programs/WeatherData/2009100818/";
-//    addData(gl, filepath);
+    String filepath = "/home/michael/zheng/Programs/WeatherData/2009100818/";
+    addData(gl, filepath);
 //    filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
 //    addData(gl, filepath);
 //    filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
@@ -220,8 +220,8 @@ public class Scene1 extends Scene {
     choicedDataList.add(dataIndexList.get(targetindex));
     dataIndexList.remove(targetindex);
     
-    updatePoission(intervaltopossion(currentinterval));
-    setDataShaderUniform(gl, choicedDataList.get(0));
+    updatePoisson(intervalToPoission(currentinterval));
+    setTargetData(gl, choicedDataList.get(0));
     return choicedDataList.get(0);
   }
   
@@ -236,7 +236,7 @@ public class Scene1 extends Scene {
       choicedDataList.add(dataIndexList.get(targetindex));
       dataIndexList.remove(targetindex);
     }
-    updatePoission(intervaltopossion(currentinterval));
+    updatePoisson(intervalToPoission(currentinterval));
     return choicedDataList;
   }
   
@@ -253,9 +253,10 @@ public class Scene1 extends Scene {
     usedDataList.clear();
   }
   
-  public void setDataShaderUniform(GL2GL3 gl, int index){
+  public void setTargetData(GL2GL3 gl, int index){
     currentData = dataList.get(index);
     currentData.use(gl);
+    updatePoisson(intervalToPoission(currentinterval));
     
     shader.setuniform("weatherTex", currentData.tex.texunit);
     shader.setuniform("shadowmap", getShadowmapTexture().texunit);
@@ -268,9 +269,10 @@ public class Scene1 extends Scene {
     setShadowmapShader1i(gl, tboard.getdivide(), "divide");
   }
   
-  public void setDataShaderUniform(GL2GL3 gl, int index, int index2){
+  public void setTargetData(GL2GL3 gl, int index, int index2){
     currentData = dataList.get(index);
     currentData.use(gl);
+    updatePoisson(intervalToPoission(currentinterval));
     
     currentData2 = dataList.get(index2);
     
@@ -528,7 +530,7 @@ public class Scene1 extends Scene {
     setShadowmapShaderTexture(gl, currentData.tex, "weatherTex");
     setShadowmapShader1i(gl, tboard.getdivide(), "divide");
     
-    updatePoission(intervaltopossion(currentinterval));
+    updatePoisson(intervalToPoission(currentinterval));
   }
   
   
@@ -545,11 +547,11 @@ public class Scene1 extends Scene {
     viewmapshader.setFloat(gl, "canvasAspect", aspect);
     updatePVMatrix(gl);
     updatePVMatrixtess(gl);
-    updatePoission(intervaltopossion(currentinterval));
+    updatePoisson(intervalToPoission(currentinterval));
   }
   
   
-  public void updatePoission(double interval) {
+  public void updatePoisson(double interval) {
     //intervalはsliderの0.01倍
     for(int i : choicedDataList){
       DataSet2D data = dataList.get(i);
@@ -568,7 +570,7 @@ public class Scene1 extends Scene {
         / (Math.sqrt(Math.pow(lights.get(0).posx, 2) 
         + Math.pow(lights.get(0).posy, 2)));    
     return (float) (0.9 * tan 
-        * intervaltopossion(currentinterval) / (currentData.max()));
+        * intervalToPoission(currentinterval) / (currentData.max()));
   }
   
   public void setlightdirectionrotate(double rad){
@@ -605,8 +607,44 @@ public class Scene1 extends Scene {
         (geocoord.y - CENTER_OF_LONGITUDE) / WIDTH_OF_LONGTITUDE * width);
   }
   
-  static private double intervaltopossion(int value) {
+  static private double intervalToPoission(int value) {
     return (double) value / 100.0;
+  }
+  
+  public void test1Rendering(GL2GL3 gl){
+   
+    shadertess.use(gl);
+    board((GL4) gl);
+    Shader.unuse(gl);
+    
+    shader.use(gl);
+    billBoardShadow(gl);
+    Shader.unuse(gl);
+    
+    gl.glFlush();
+  }
+  
+  public void settingTest3(){
+    updatePoisson(intervalToPoission(currentinterval));
+  }
+  
+  public void test3Rendering1(GL2GL3 gl){
+    shader.use(gl);
+    cylinders(gl);
+    
+    board((GL4) gl);
+    
+    gl.glFlush();
+  }
+  
+  public void test3Rendering2(GL2GL3 gl){
+    
+    board((GL4) gl);
+    
+    shader.use(gl);
+    billBoardShadow(gl);
+    
+    gl.glFlush();
   }
   
   @Override 
@@ -615,13 +653,31 @@ public class Scene1 extends Scene {
   }
   
   public void scene(GL2GL3 gl, Shader shader, boolean show) {
+    
+    shader.use(gl);
+    
+    cylinders(gl);
+    
+    if(softshadow.state){
+      if(!show){
+        billBoardShadow(gl);
+      }
+    }
+    
+    if (mapAdjustmode.isSelected()){
+      renderMarkPoint(gl, model, shader, markPointList);
+    }
+    Shader.unuse(gl);
+    
+    gl.glFlush();
+  }
+ 
+  private void cylinders(GL2GL3 gl){
     model.glLoadIdentity();
     for(int i=0; i < currentData.dist.size(); i++){
       model.glPushMatrix();
       Vector2DDouble pos = currentData.dist.get(i);
       float value = (float)currentData.funcWind.getDouble(pos.x, pos.y);
-      //System.out.println(value);
-      //System.out.println(pos.x + " " + pos.y);
       //拡大
       model.glScalef(viewscaling, viewscaling, 1);
       //移動
@@ -629,7 +685,6 @@ public class Scene1 extends Scene {
       model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
       model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
       cylinderscale = cylinderscale();
-      //System.out.println(value);
       model.glScalef(0.3f * cylinderscale * value * 7, 
           0.3f * cylinderscale * value * 7, 
           cylinderscale * value * 0.9f * 70);
@@ -641,93 +696,88 @@ public class Scene1 extends Scene {
 //      rping.rendering(gl);
       model.glPopMatrix();
     }
-    
-    if(softshadow.state){
-      if(!show){
-        gl.glDisable(GL2.GL_DEPTH_TEST);
-        gl.glEnable(GL2.GL_BLEND);
-        gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
-        for(int i=0; i < currentData.dist.size(); i++){
-          model.glPushMatrix();
-          Vector2DDouble pos = currentData.dist.get(i);
-          float value = (float)currentData.funcWind.getDouble(pos.x, pos.y);
+  }
+  
+  private void billBoardShadow(GL2GL3 gl){
+    model.glLoadIdentity();
+    gl.glDisable(GL2.GL_DEPTH_TEST);
+    gl.glEnable(GL2.GL_BLEND);
+    gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+    for(int i=0; i < currentData.dist.size(); i++){
+      model.glPushMatrix();
+      Vector2DDouble pos = currentData.dist.get(i);
+      float value = (float)currentData.funcWind.getDouble(pos.x, pos.y);
 
-          //拡大
-          model.glScalef(viewscaling, viewscaling, 1);
-          //移動
-          //y成分に一時的にマイナスをつけてごまかす
-          model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
-          model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
-          cylinderscale = cylinderscale();
-          model.glScalef(1f * cylinderscale * value * 7, 
-              1f * cylinderscale * value * 7, 
-              1);
-          //縮小
-          model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
-          model.glRotatef(135, 0, 0, 1);
-          updateModelMatrix(gl, shader, model);
-          shadow.rendering(gl, shader);
-          model.glPopMatrix();
-        }
-        gl.glDisable(GL2.GL_BLEND);
-        gl.glEnable(GL2.GL_DEPTH_TEST);
-      }
+      //拡大
+      model.glScalef(viewscaling, viewscaling, 1);
+      //移動
+      //y成分に一時的にマイナスをつけてごまかす
+      model.glTranslatef((float) (pos.x), -(float) (pos.y), 0);
+      model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
+      cylinderscale = cylinderscale();
+      model.glScalef(1f * cylinderscale * value * 7, 
+          1f * cylinderscale * value * 7, 
+          1);
+      //縮小
+      model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
+      model.glRotatef(135, 0, 0, 1);
+      updateModelMatrix(gl, shader, model);
+      shadow.rendering(gl, shader);
+      model.glPopMatrix();
     }
-    
-    if (mapAdjustmode.isSelected()){
-      renderMarkPoint(gl, model, shader, markPointList);
-    }
-    
-    //湿度
-//    if(show & textureshadow.state){
-//      model.glLoadIdentity();
-//      model.glTranslatef(0, 0, 40);
-//      //model.glPushMatrix();
-//      for(float j = 0; j < 145; j+=2){
-//        model.glPushMatrix();
-//        model.glTranslatef(0, -(-height/2 + height*(j/145)), 0);
-//        for(float i = 0; i < 201; i+=2){
-//          model.glPushMatrix();
-//          model.glTranslatef(-width/2 + width*(i/201), 0, 0);
-//          float tmp = datafb.get((int)(j*201+i))/100;
-//          //tmp *= 1.85;
-//          //tmp = 1;
-//          //System.out.println(tmp);
-//          //model.glRotatef(45, 0, 0, 1);
-//          //model.glScalef(width/201 * tmp, width/201*tmp, 1f);
-//          
-//          model.glScalef(width/201, width/201, 1f);
-//          model.glPushMatrix();
-//          //model.glRotatef(90f, 0, 0, 1);
+    gl.glDisable(GL2.GL_BLEND);
+    gl.glEnable(GL2.GL_DEPTH_TEST);
+  }
+  
+  private void textureShadow(GL2GL3 gl){
+    if(textureshadow.state){
+      model.glLoadIdentity();
+      model.glTranslatef(0, 0, 40);
+      //model.glPushMatrix();
+      for(float j = 0; j < 145; j+=2){
+        model.glPushMatrix();
+        //model.glTranslatef(0, -(-height/2 + height*(j/145)), 0);
+        for(float i = 0; i < 201; i+=2){
+          model.glPushMatrix();
+          //model.glTranslatef(-width/2 + width*(i/201), 0, 0);
+          //float tmp = datafb.get((int)(j*201+i))/100;
+          //tmp *= 1.85;
+          //tmp = 1;
+          //System.out.println(tmp);
+          //model.glRotatef(45, 0, 0, 1);
+          //model.glScalef(width/201 * tmp, width/201*tmp, 1f);
+          
+          //model.glScalef(width/201, width/201, 1f);
+          model.glPushMatrix();
+          //model.glRotatef(90f, 0, 0, 1);
 //          model.glScalef(Math.min(tmp*2f+0.2f,1.1f), 
 //              Math.max(0.2f,0.2f+2f*(tmp-0.5f)), 
 //              1f);
+          updateModelMatrix(gl, shader, model);
+          sphere.rendering(gl);
+          model.glPopMatrix();
+          
+          //plus minus
+//          model.glScalef(2*width/201, 2*width/201, 1f); 
+//          model.glPushMatrix();
+//          model.glScalef(2 * tmp, 0.1f, 1f);
 //          updateModelMatrix(gl, shader, model);
-//          sphere.rendering(gl);
+//          box.rendering(gl);
 //          model.glPopMatrix();
 //          
-//          //plus minus
-////          model.glScalef(2*width/201, 2*width/201, 1f); 
-////          model.glPushMatrix();
-////          model.glScalef(2 * tmp, 0.1f, 1f);
-////          updateModelMatrix(gl, shader, model);
-////          box.rendering(gl);
-////          model.glPopMatrix();
-////          
-////          model.glPushMatrix();
-////          model.glScalef(0.1f, Math.max(0,2*1f*(tmp-0.5f)), 1f);
-////          updateModelMatrix(gl, shader, model);
-////          box.rendering(gl);
-////          model.glPopMatrix();
-//          //end
-//          
+//          model.glPushMatrix();
+//          model.glScalef(0.1f, Math.max(0,2*1f*(tmp-0.5f)), 1f);
+//          updateModelMatrix(gl, shader, model);
+//          box.rendering(gl);
 //          model.glPopMatrix();
-//        }
-//        model.glPopMatrix();
-//      }
-//    }
+          //end
+          
+          model.glPopMatrix();
+        }
+        model.glPopMatrix();
+      }
+    }
     
-    //風速
 //    if(show & false){
 //      model.glLoadIdentity();
 //      model.glTranslatef(0, 0, 40);
@@ -751,28 +801,6 @@ public class Scene1 extends Scene {
 //        model.glPopMatrix();
 //      }
 //    }
-
-    if(show){
-      model.glLoadIdentity();
-      model.glPushMatrix();
-      float scale = 10;
-      //model.glScalef(scale, 0.1f, scale);
-      updateModelMatrix(gl, shader, model);
-      //box.rendering(gl);
-      //sphere.rendering(gl);
-      //hex.rendering(gl);
-      model.glPopMatrix();
-      model.glTranslatef(0, 0, 1f);
-      //model.glRotatef(i, 1, 0, 0);
-      updateModelMatrix(gl, shader, model);
-      gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), "colorset"),1);
-      //box.rendering(gl);
-      lights.get(0).move(gl, model);
-      updateModelMatrix(gl, shader, model);
-      //光源位置を表示
-      //lights.get(0).rendering(gl);
-    }       
-    gl.glFlush();
   }
   
   public void renderMarkInScene(GL2GL3 gl, Billboard obj, Vector2DDouble pos,
@@ -809,24 +837,29 @@ public class Scene1 extends Scene {
   public void scenetess(GL3 gl, Shader shader){
     scenetess(gl, shader, true);
   }
+  
+  //shadowmapの修正をあとでする
   @Override
   public void scenetess(GL3 gl, Shader shader, boolean show){
-    if (MAP_CHANGED)
+    shadertess.use(gl);
+    board((GL4) gl);
+    Shader.unuse(gl);
+    gl.glFlush();
+  }
+  
+  private void board(GL4 gl){
+    shadertess.use(gl);
+    if (MAP_CHANGED){
       setMapTex(gl, PATH_TO_MAP, shader);
+    }
+    
     model.glLoadIdentity();
     model.glScalef(viewscaling, viewscaling, 1);
     model.glTranslatef((float) viewcenter.x, (float) viewcenter.y, 0);
-    updateModelMatrix(gl, shader, model);
+    updateModelMatrix(gl, shadertess, model);
     //gl.glPolygonMode(GL.GL_FRONT_AND_BACK, GL2.GL_LINE);
-    //if(!show)
-      //gl.glUniform1i(gl.glGetUniformLocation(shader.getID(), "offheight"), 0);
-    tboard.rendering(gl);
-    //ウラ面
-//    model.glTranslatef(0, 0, 0.01f);
-//    model.glRotatef(180, 1, 0, 0);
-//    updateModelMatrix(gl, shader, model);
-//    tboard.rendering(gl);
-    gl.glFlush();
+    tboard.rendering((GL4) gl);
+    Shader.unuse(gl);
   }
 
   @Override
@@ -844,10 +877,10 @@ public class Scene1 extends Scene {
     
     if(currentinterval != possioninterval.getValue()){
       currentinterval = possioninterval.getValue();
-      updatePoission(intervaltopossion(currentinterval));
+      updatePoisson(intervalToPoission(currentinterval));
     }
     if(nochangeframe == 10){
-      updatePoission(intervaltopossion(currentinterval));
+      updatePoisson(intervalToPoission(currentinterval));
     }
 //    for(int j = 0; j < this.lightCount(); j++){
 //      double angle = 2 * Math.PI * j / (this.lightCount()) + i/60;

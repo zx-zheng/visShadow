@@ -18,6 +18,7 @@ public class Test1 extends SceneOrganizer{
   long intervalTime = 1000;
   boolean SHOW_QUESTION = true;
   boolean newProblem = false;
+  boolean newProblemSet = false;
   Scene1 scene;
   private int[][] SCENE_VIEWPORT = new int[5][4];
   
@@ -38,7 +39,11 @@ public class Test1 extends SceneOrganizer{
   
   ArrayList<Integer> choiceList;
   
-  public Test1(GL2GL3 gl, Scene1 scene, int width, int height) {
+  public Test1() {
+
+  }
+  
+  public void init(GL2GL3 gl, Scene1 scene, int width, int height){
     initClearColor(L);
     initoriginalProblemSet();
     this.scene = scene;
@@ -73,6 +78,7 @@ public class Test1 extends SceneOrganizer{
 
   @Override
   public void rendering(GL2GL3 gl) {
+    gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
     clearWindow(gl, clearColor);
     
     if (newProblem){
@@ -84,7 +90,7 @@ public class Test1 extends SceneOrganizer{
       return;
     }
     
-    if(isQuestioning || true){
+    if(isQuestioning & newProblemSet){
       showQuestion(gl);
     }
     gl.glFlush();
@@ -96,30 +102,32 @@ public class Test1 extends SceneOrganizer{
     //周辺の表示
     for (int i = 0; 
         i < Math.min(SUBSCENE_OFFSET.length, problemSet.size()); i++) {
-      scene.setDataShaderUniform(gl, 
+      scene.setTargetData(gl, 
           choiceList.get(problemSet.get(i).x),
           choiceList.get(problemSet.get(i).y));
-      scene.renderingToWindow(gl, SCENE_VIEWPORT[i][0], SCENE_VIEWPORT[i][1],
-          SCENE_VIEWPORT[i][2], SCENE_VIEWPORT[i][3], false);
+      gl.glViewport(SCENE_VIEWPORT[i][0], SCENE_VIEWPORT[i][1],
+          SCENE_VIEWPORT[i][2], SCENE_VIEWPORT[i][3]);
+      scene.test1Rendering(gl);
     }
     //中心の表示
     //scene.ShadowMap(gl, true);
-    scene.setDataShaderUniform(gl, choiceList.get(answerNum));
-    scene.renderingToWindow(gl, SCENE_VIEWPORT[4][0], SCENE_VIEWPORT[4][1],
-        SCENE_VIEWPORT[4][2], SCENE_VIEWPORT[4][3], false);
+    scene.setTargetData(gl, choiceList.get(answerNum));
+    gl.glViewport(SCENE_VIEWPORT[4][0], SCENE_VIEWPORT[4][1],
+        SCENE_VIEWPORT[4][2], SCENE_VIEWPORT[4][3]);
+    scene.test1Rendering(gl);
   }
   
   public void questionOld(GL2GL3 gl){
     //周辺の表示
     for (int i = 0; 
         i < Math.min(SUBSCENE_OFFSET.length, choiceList.size()); i++) {
-      scene.setDataShaderUniform(gl, choiceList.get(i));
+      scene.setTargetData(gl, choiceList.get(i));
       scene.renderingToWindow(gl, SCENE_VIEWPORT[i][0], SCENE_VIEWPORT[i][1],
           SCENE_VIEWPORT[i][2], SCENE_VIEWPORT[i][3], false);
     }
     //中心の表示
     //scene.ShadowMap(gl, true);
-    scene.setDataShaderUniform(gl, choiceList.get(answerNum));
+    scene.setTargetData(gl, choiceList.get(answerNum));
     scene.renderingToWindow(gl, SCENE_VIEWPORT[4][0], SCENE_VIEWPORT[4][1],
         SCENE_VIEWPORT[4][2], SCENE_VIEWPORT[4][3], false);
   }
@@ -129,11 +137,17 @@ public class Test1 extends SceneOrganizer{
     newProblem = true;
   }
   
+  @Override
+  public void endQuestion(){
+    super.endQuestion();
+    newProblemSet = false;
+  }
+  
   private void newProblem(GL2GL3 gl){
     for (Vector2DInt problem : problemSet){
       originalProblemSet.add(problem);
-      problemSet.remove(problem);
     }
+    problemSet.clear();
     choiceList = scene.resetAndGetChoiceList(gl, CHOICE_NUM);
     answerNum = (int)(Math.random() * choiceList.size());
     while (originalProblemSet.size() > 0){
@@ -141,6 +155,8 @@ public class Test1 extends SceneOrganizer{
       problemSet.add(originalProblemSet.get(index));
       originalProblemSet.remove(index);
     }
+    newProblemSet = true;
+    startQuestion();
   }
   
   private void answer(int ans){
@@ -178,7 +194,7 @@ public class Test1 extends SceneOrganizer{
       return;
     } else if (isInterval) {
       startQuestion();
-      return;
+      //return;
     }
     
     if(newProblem){

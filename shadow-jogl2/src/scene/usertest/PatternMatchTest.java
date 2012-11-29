@@ -14,6 +14,7 @@ import za.co.luma.geom.Vector2DInt;
 
 public class PatternMatchTest extends SceneOrganizer{
   
+  //バックグラウンドの明度
   int L = 70;
   long intervalTime = 1000;
   ColorMosaic colorMosaic; 

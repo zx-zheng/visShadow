@@ -55,6 +55,11 @@ public class Tiledboard extends Obj implements Semantic{
     gl.glBindVertexArray(0);
   }
   
+  @Override
+  void rendering(GL2GL3 gl){
+    rendering((GL4) gl);   
+  }
+  
   private void initArrayBuffer(GL2GL3 gl){
     //Generate a buffer object
     int arraybuffer[] = new int[1];
@@ -119,10 +124,5 @@ public class Tiledboard extends Obj implements Semantic{
       }
     }
   }
-
-  @Override
-  void rendering(GL2GL3 gl){
-    // TODO Auto-generated method stub
-    
-  }
+  
 }

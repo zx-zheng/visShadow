@@ -28,6 +28,7 @@ import scene.usertest.ColorMosaic;
 import scene.usertest.PatternMatchTest;
 import scene.usertest.Test1;
 import scene.usertest.Test2;
+import scene.usertest.Test3;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
 
@@ -59,6 +60,7 @@ public class SceneRender extends GuiVariables{
   ViewResult viewResult;
   Test1 test1;
   Test2 test2;
+  Test3 test3;
   
   public void init(GL2GL3 gl){
     timer.init(gl);
@@ -150,9 +152,9 @@ public class SceneRender extends GuiVariables{
     tbs.bind(gl);
     
     //scene.updateligths(gl, shadowmapping);
-//    scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
-//    //scene.perspectivef(50, 1, 1f, 30f);
-//    scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
+    //scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
+    //scene.perspectivef(50, 1, 1f, 30f);
+    //scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
     
   //initの場所はあとで調整
     scene.init(gl, shadowmapping, shadowmappingtess);
@@ -169,16 +171,22 @@ public class SceneRender extends GuiVariables{
   private void initSceneOrganizer(GL2GL3 gl){
 //    viewResult = new ViewResult(gl, scene);
 //    viewResult.addTexViewer(texviewer);
+//    currentSO = viewResult;
     
-//    test1 = new Test1(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
+//    test1 = new Test1();
+//    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
 //    currentSO = test1;
     
 //    test2 = new Test2(gl, scene);
 //    currentSO = test2;
     
-    PatternMatchTest pmt = new PatternMatchTest(8);
-    pmt.init(gl);
-    currentSO = pmt;
+    test3 = new Test3();
+    test3.init(gl, scene);
+    currentSO = test3;
+    
+//    PatternMatchTest pmt = new PatternMatchTest(8);
+//    pmt.init(gl);
+//    currentSO = pmt;
   }
   
   public void rendering(GL2GL3 gl){

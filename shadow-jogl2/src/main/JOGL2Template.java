@@ -50,7 +50,7 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
   // Constructor to create profile, caps, drawable, animator, and initialize Frame
   public JOGL2Template() {
     // Get the default OpenGL profile that best reflect your running platform.
-    GLProfile glp = GLProfile.getDefault();
+    GLProfile glp = GLProfile.get(GLProfile.GL4bc);
     // Specifies a set of OpenGL capabilities, based on your profile.
     GLCapabilities caps = new GLCapabilities(glp);
     caps.setNumSamples(2); // enable anti aliasing - just as a example

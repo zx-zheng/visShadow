@@ -77,6 +77,7 @@ public abstract class SceneOrganizer{
     }catch(InterruptedException e){
       e.printStackTrace();
     };
+    //isInterval = false;
   }
   
   public void setCanvasSize(GL2GL3 gl, int width, int height){

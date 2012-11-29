@@ -15,6 +15,7 @@ import oekaki.util.*;
 import render.ObjManager;
 import render.RenderingPass;
 import scene.obj.Light;
+import scene.usertest.Test1;
 import util.math.Vec3;
 import util.math.Vec3d;
 
@@ -300,9 +301,15 @@ public abstract class Scene implements RenderingPass {
   public void renderingToWindow(GL2GL3 gl, int offsetx, int offsety,
       int width, int height, boolean show){
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
-    gl.glClearColor(1, 1, 1, 1);
+    //gl.glClearColor(1, 1, 1, 1);
     gl.glViewport(offsetx, offsety, width, height);
     
+    renderingToWindow(gl, show);
+    
+    gl.glFlush();
+  }   
+  
+  public void renderingToWindow(GL2GL3 gl, boolean show){
     shadertess.use(gl);
     updateligths(gl, shadertess);
     scenetess((GL3)gl, shadertess, false);
@@ -311,9 +318,7 @@ public abstract class Scene implements RenderingPass {
     updateligths(gl, shader);
     scene(gl, shader, show);
     Shader.unuse(gl);
-    
-    gl.glFlush();
-  }   
+  }
   
   public void renderingToFBO(GL2GL3 gl, FBO fbo, int offsetx, int offsety,
       int width, int height){
