@@ -3,6 +3,7 @@ import gl.*;
 import gui.Ctrlpanel;
 import gui.GuiVariables;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
@@ -80,7 +81,7 @@ public class SceneRender extends GuiVariables{
     //initTestData(gl);
     
     scene = new Scene1();
-    scene.initShadowmap(gl, 1, SHADOWMAPWIDTH, SHADOWMAPHEIGHT);
+    scene.initShadowmap(gl, 2, SHADOWMAPWIDTH, SHADOWMAPHEIGHT);
     for(int i = 0; i < scene.lightCount(); i++){
       scene.lights.get(i).init(gl);
 //      float angle = 2 * (float)Math.PI * i / (scene.lightCount() - 1);
@@ -89,7 +90,7 @@ public class SceneRender extends GuiVariables{
 //          0, 0, 0, 0, 1, 0);
 //      scene.lights.get(i).perspectivef(120f, 1, 0.1f, 50f);
     }
-    scene.lights.get(0).lookatd(4, 4, 20, 0, 0, 0, 0, 1, 0);
+    scene.lights.get(0).lookatd(4, 4, 10, 0, 0, 0, 0, 1, 0);
     //scene.lights.get(0).lookatd(0, 0, 50, 0, 0, 0, 0, 1, 0);
     scene.lights.get(0).orthof(-4, 4, -4, 4, 0, 60);
     scene.lights.get(0).setattr(0, 1);
@@ -98,8 +99,8 @@ public class SceneRender extends GuiVariables{
 //    scene.lights.get(2).lookatd(4, 4, 10, 0, 0, 0, 0, 1, 0);
 //    scene.lights.get(2).orthof(-5, 5, -5, 5, 0, 30);
     
-//    scene.lights.get(1).lookatd(0, 0, 50, 0, 0, 0, 0, 1, 0);
-//    scene.lights.get(1).orthof(-4, 4, -4, 4, 0, 100);
+    scene.lights.get(1).lookatd(4, -4, 10, 0, 0, 0, 0, 1, 0);
+    scene.lights.get(1).orthof(-4, 4, -4, 4, 0, 100);
     
 //    scene.lights.get(2).lookatd(0, 0, 50, 0, 0, 0, 0, 1, 0);
 //    scene.lights.get(2).orthof(-5, 5, -5, 5, 0, 100);
@@ -151,10 +152,9 @@ public class SceneRender extends GuiVariables{
     tbs = new TexBindSet(tex);
     tbs.bind(gl);
     
-    //scene.updateligths(gl, shadowmapping);
-    //scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
-    //scene.perspectivef(50, 1, 1f, 30f);
-    //scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
+//    scene.updateligths(gl, shadowmapping);
+//    scene.lookat(0, 0, 30, 0, 0, 0, 0, 1, 0);
+//    scene.orthof(proj[0], proj[1], proj[2], proj[3], 0, 100);
     
   //initの場所はあとで調整
     scene.init(gl, shadowmapping, shadowmappingtess);
@@ -173,24 +173,25 @@ public class SceneRender extends GuiVariables{
 //    viewResult.addTexViewer(texviewer);
 //    currentSO = viewResult;
     
-//    test1 = new Test1();
-//    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
-//    currentSO = test1;
+    test1 = new Test1();
+    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
+    currentSO = test1;
     
 //    test2 = new Test2(gl, scene);
 //    currentSO = test2;
     
-    test3 = new Test3();
-    test3.init(gl, scene);
-    currentSO = test3;
+//    test3 = new Test3(10);
+//    test3.init(gl, scene);
+    //currentSO = test3;
     
 //    PatternMatchTest pmt = new PatternMatchTest(8);
 //    pmt.init(gl);
-//    currentSO = pmt;
+    //currentSO = pmt;
   }
   
   public void rendering(GL2GL3 gl){
-    updateCanvasSize(gl);
+    updateCanvasSize(gl);test3 = new Test3(10);
+//  
     currentSO.rendering(gl);
     currentSO.iterate(gl);
     if(switched){
@@ -319,6 +320,10 @@ public class SceneRender extends GuiVariables{
   
   public void mouseMoved(MouseEvent e){
     currentSO.mouseMoved(e);
+  }
+  
+  public void clickButton(ActionEvent e){
+    currentSO.clickButton(e);
   }
   
   private void screenshot(String path, int width, int height){

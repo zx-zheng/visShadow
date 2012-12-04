@@ -131,6 +131,8 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     sr.CANVAS_WIDTH = glcanvas.getWidth();
     sr.CANVAS_HEIGHT = glcanvas.getHeight();
     
+    Ctrlpanel.getInstance().sceneRender = sr;
+    
     if (drawable instanceof AWTGLAutoDrawable) {
       AWTGLAutoDrawable awtDrawable = (AWTGLAutoDrawable) drawable;
       awtDrawable.addMouseMotionListener(this);

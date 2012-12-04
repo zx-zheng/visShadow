@@ -52,6 +52,10 @@ public class Billboard extends Obj implements Semantic{
     this(gl, img, new Vector2DDouble(0, 0), 1.0);
   }
   
+  public Billboard(GL2GL3 gl, String img, float width){
+    this(gl, img, new Vector2DDouble(0, 0), width);
+  }
+  
   private void initTex(GL2GL3 gl, String img){
     TexImage image = TexImageUtil.loadImage(img, 4, 
         TexImage.TYPE_BYTE);

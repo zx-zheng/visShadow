@@ -13,6 +13,7 @@ public class Shader{
   
   static int currentShaderID;
   private boolean isInitialized = false;
+  private boolean modelMatAdded = false, viewMatAdded = false;
   int shaderID;
   String SHADER_NAME;
   String vsource, fsource, csource, esource, gsource;
@@ -20,8 +21,10 @@ public class Shader{
   Stack<GLUniformData> uniformstack = new Stack<GLUniformData>();
   HashMap<String, GLUniformData> uniformdatamap = 
       new HashMap<String, GLUniformData>();
-  public enum MatrixType {MODEL, VIEW};
-  int UNIFORM_MODEL_MATRIX, UNIFORM_VIEW_MATRIX;
+  public enum MatrixType {MODEL, VIEWPROJ};
+  final public static String SHADER_MODEL_MATRIX_NAME = "model";
+  final public static String SHADER_VIEW_PROJ_MATRIX_NAME = "viewproj";
+  int uniformModelMatrix, uniformViewProjMatrix;
 
   public Shader(){
    
@@ -63,13 +66,17 @@ public class Shader{
   
   private void initUniformLocation(GL2GL3 gl){
     this.use(gl);
-    UNIFORM_MODEL_MATRIX = gl.glGetUniformLocation(shaderID, "model");
-    UNIFORM_VIEW_MATRIX = gl.glGetUniformLocation(shaderID, "view");
-    if(UNIFORM_MODEL_MATRIX == -1 
-        || UNIFORM_VIEW_MATRIX == -1){
+    uniformModelMatrix = gl.glGetUniformLocation(shaderID, SHADER_MODEL_MATRIX_NAME);
+    uniformViewProjMatrix = gl.glGetUniformLocation(shaderID, SHADER_VIEW_PROJ_MATRIX_NAME);
+    if(uniformModelMatrix == -1){ 
       System.out.println("Shader " + SHADER_NAME + " ID:" + shaderID  
-          + ": Shader matrix uniform location error");
+          + ": Shader Matrix model Uniform location error");
     }
+    if(uniformViewProjMatrix == -1){
+      System.out.println("Shader " + SHADER_NAME + " ID:" + shaderID  
+          + ": Shader Matrix view Uniform location error");
+    }
+    
     Shader.unuse(gl);
   }
   
@@ -83,12 +90,38 @@ public class Shader{
     
     switch (type) {
     case MODEL:
-      gl.glUniformMatrix4fv(UNIFORM_MODEL_MATRIX, 1, false, 
-          mat.glGetMatrixf());
+      gl.glUniformMatrix4fv(uniformModelMatrix, 1, false, 
+          mat.glGetMvMatrixf());
       break;
-    case VIEW:
-      gl.glUniformMatrix4fv(UNIFORM_VIEW_MATRIX, 1, false, 
-          mat.glGetMatrixf());
+    case VIEWPROJ:
+      gl.glUniformMatrix4fv(uniformViewProjMatrix, 4, false, 
+          mat.glGetPMvMvitMatrixf());
+      break;
+    }
+  }
+  
+  public void setMatrix(GL2GL3 gl, PMVMatrix mat, MatrixType type){
+    
+    mat.update();
+    
+    switch (type) {
+    case MODEL:
+      if(!modelMatAdded){
+        adduniform(gl, "model", 4, 4, mat.glGetMatrixf());
+        modelMatAdded = true;
+        return;
+      } else {
+        setuniform("model", mat.glGetMatrixf());
+      }   
+      break;
+    case VIEWPROJ:
+      if(!viewMatAdded){
+        adduniform(gl, "view", 4, 4, mat.glGetMatrixf());
+        viewMatAdded = true;
+        return;
+      } else {
+        setuniform("view", mat.glGetMatrixf());
+      }   
       break;
     }
   }
@@ -134,6 +167,13 @@ public class Shader{
     uniformstack.push(newuniform);
   }
   
+  public void adduniform(GL2GL3 gl, String name, int components, float[] data){
+    GLUniformData newuniform = new GLUniformData(name, components, FloatBuffer.wrap(data));
+    newuniform.setLocation(gl.glGetUniformLocation(shaderID, name));
+    uniformdatamap.put(name, newuniform);
+    uniformstack.push(newuniform);
+  }
+  
   public void adduniform(GL2GL3 gl, String name, int rows, int columns, FloatBuffer data){
     GLUniformData newuniform = new GLUniformData(name, rows, columns, data);
     newuniform.setLocation(gl.glGetUniformLocation(shaderID, name));
@@ -162,6 +202,12 @@ public class Shader{
   public void setuniform(String name, FloatBuffer val){
     GLUniformData data = uniformdatamap.get(name);
     data.setData(val);
+    uniformstack.push(data);
+  }
+  
+  public void setuniform(String name, float[] val){
+    GLUniformData data = uniformdatamap.get(name);
+    data.setData(FloatBuffer.wrap(val));
     uniformstack.push(data);
   }
   

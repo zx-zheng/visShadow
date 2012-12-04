@@ -21,6 +21,7 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import scene.SceneRender;
 import scene.oldTypeScene.Scene;
 
 
@@ -34,6 +35,7 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   JPanel panel = new JPanel();
   //ArrayList<JComponent> list = new ArrayList<JComponent>();
   public Scene scene;
+  public SceneRender sceneRender;
   
   public Ctrlpanel(){
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -129,6 +131,9 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   public void actionPerformed(ActionEvent e){
     if(scene != null)
       scene.clickButton(e);
+    
+    if(sceneRender != null)
+      sceneRender.clickButton(e);
   }
   
 }

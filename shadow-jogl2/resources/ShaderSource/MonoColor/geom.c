@@ -3,8 +3,8 @@
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 
-uniform mat4 view;
-//uniform mat4 proj; 
+//4 matrices P, Mv, Mvi and Mvit.
+uniform mat4 viewproj[4]; 
 
 in vec3 Normal[];
 in vec2 texcoord0[];
@@ -22,7 +22,7 @@ void main(){
   Geom.normal = normalize( cross(A, B));
   for(int i = 0; i < gl_in.length(); i++){
     Geom.worldpos = gl_in[i].gl_Position;
-    gl_Position = view * gl_in[i].gl_Position;
+    gl_Position = viewproj[0] * viewproj[1] * gl_in[i].gl_Position;
     Geom.texcoord0 = texcoord0[i];
     Geom.screentexcoord 
       = vec2(gl_Position.x, -gl_Position.y) / gl_Position.w;

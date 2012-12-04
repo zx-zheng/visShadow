@@ -1,5 +1,8 @@
 package scene;
 
+import gui.Ctrlpanel;
+
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.io.BufferedWriter;
@@ -10,6 +13,7 @@ import java.io.PrintWriter;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
+import javax.swing.JButton;
 
 import util.ColorUtil;
 import za.co.luma.geom.Vector3DDouble;
@@ -29,6 +33,7 @@ public abstract class SceneOrganizer{
   protected boolean isAnswered = false;
   protected boolean isInterval = false;
   
+  protected boolean isStart = false;
   protected boolean nextProblem = false;
   protected boolean isQuestioning = false;
   
@@ -39,6 +44,9 @@ public abstract class SceneOrganizer{
   
   public int CANVAS_WIDTH;
   public int CANVAS_HEIGHT;
+  
+  protected JButton startTestButton;
+  private static boolean isStartButtonAdd = false;
 
   abstract public void rendering(GL2GL3 gl);
   abstract public void iterate(GL2GL3 gl);
@@ -48,6 +56,14 @@ public abstract class SceneOrganizer{
   abstract public void mouseReleased(MouseEvent e);
   abstract public void mouseMoved(MouseEvent e);
   abstract public void switchSO(GL2GL3 gl);
+  
+  public SceneOrganizer(){
+    if(!isStartButtonAdd){
+      startTestButton = new JButton("Start Test");
+      Ctrlpanel.getInstance().addButton(startTestButton);
+      isStartButtonAdd = true;
+    }
+  }
   
   protected void initClearColor(int L){
     clearColor = ColorUtil.LabtoRGB(L, 0, 0);
@@ -85,6 +101,12 @@ public abstract class SceneOrganizer{
     CANVAS_HEIGHT = height;
   }
   
+  public void startTest(){
+    if(isStart) return;
+    isStart = true;
+    startQuestion();
+  }
+  
   public void startQuestion(){
     isQuestioning = true;
     isAnswered = false;
@@ -95,6 +117,7 @@ public abstract class SceneOrganizer{
   
   public void endQuestion(){
     stopMeasureTime();
+    numberOfAnsweredQuestion++;
     answerOutput += elapsedTime + "\n";
     isQuestioning = false;
     isAnswered = true;
@@ -102,14 +125,12 @@ public abstract class SceneOrganizer{
   
   protected void correct(){
     answerOutput += "1, ";
-    numberOfCorrectAnswer++;
-    numberOfAnsweredQuestion++;
+    numberOfCorrectAnswer++; 
     System.out.println("Correct");
   }
   
   protected void wrong(){
     answerOutput += "0, ";
-    numberOfAnsweredQuestion++;
     System.out.println("wrong");
   }
   
@@ -146,6 +167,13 @@ public abstract class SceneOrganizer{
     System.out.println("Result : " + numberOfCorrectAnswer + " / " + numberOfQuestion);
     System.out.println("Average answer time : " + ((double) sumOfAnswerTime / numberOfQuestion) + " ms");
     System.exit(0);
+  }
+  
+  public void clickButton(ActionEvent e){
+    Object src = e.getSource();
+    if (src == startTestButton){
+      startTest();
+    }
   }
   
 }

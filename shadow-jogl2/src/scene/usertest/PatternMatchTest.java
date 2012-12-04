@@ -1,5 +1,6 @@
 package scene.usertest;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -28,6 +29,7 @@ public class PatternMatchTest extends SceneOrganizer{
   int fakeCount = 8;
   
   public PatternMatchTest(int numberOfQuestion){
+    super();
     this.numberOfQuestion = numberOfQuestion;
   }
   
@@ -143,6 +145,11 @@ public class PatternMatchTest extends SceneOrganizer{
   @Override
   public void mouseMoved(MouseEvent e){
     colorMosaic.setMarkPos(windowCoordToWorldCoord(e.getX(), e.getY()));
+  }
+
+  @Override
+  public void clickButton(ActionEvent e){
+    super.clickButton(e);  
   }
 
 }

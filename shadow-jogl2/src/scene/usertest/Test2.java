@@ -1,5 +1,6 @@
 package scene.usertest;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -136,6 +137,12 @@ public class Test2 extends SceneOrganizer{
 
   @Override
   public void mouseMoved(MouseEvent e){
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void clickButton(ActionEvent e){
     // TODO Auto-generated method stub
     
   }

@@ -4,18 +4,16 @@
 
 layout(location = FRAG_COLOR, index = 0) out vec4 Color;
 
-uniform mat4 viewproj[4];
-uniform float alpha = 1;
-uniform sampler2D billBoardTex;
+uniform vec3 inColor = vec3(1);
 
 in geom{
+  vec4 worldpos;
   vec3 normal;
   vec2 texcoord0;
   vec2 screentexcoord;
+  vec3 shadeColor;
 }Geom;
 
 void main(){
-  Color = texture(billBoardTex, Geom.texcoord0);
-  Color.w *= alpha;
-  //Color = vec4(0,0,0,1);
+  Color = vec4(inColor * Geom.shadeColor * 0.7 + 0.3, 1);
 }

@@ -7,6 +7,7 @@ layout(location = FRAG_COLOR, index = 0) out vec4 Color;
 uniform mat4 lightsview[10];
 uniform mat4 lightsproj[10];
 uniform vec4 lightscolor[10];
+uniform vec3 lightPos[10];
 uniform ivec4 lightsattr[10];
 uniform int divide,shadowswitch,colorset;
 uniform ivec2 lightcount_real_virtual;
@@ -85,8 +86,9 @@ void main(){
 
   if(shadowswitch == 0)shadow = 1;
 
+  Color = vec4(Geom.normal, 1);
   //Color = vec4(0.7) + vec4(0.3) * shadow;
   //Color = vec4(0);
-  Color = texture(billBoardTex, Geom.texcoord0);
-  //Color = vec4(1,1,1,0.5);
+  //Color = texture(billBoardTex, Geom.texcoord0);
+  //Color = vec4(1,1,0,1);
 }

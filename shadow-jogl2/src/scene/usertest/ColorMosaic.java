@@ -122,10 +122,10 @@ public class ColorMosaic extends SceneBase{
     view.glOrthof(PROJ[0], PROJ[1], PROJ[2], PROJ[3],
         PROJ[4], PROJ[5]);
     monoColorShader.use(gl);
-    monoColorShader.updateMatrix(gl, view, Shader.MatrixType.VIEW);
+    monoColorShader.updateMatrix(gl, view, Shader.MatrixType.VIEWPROJ);
     
     billBoardShader.use(gl);
-    billBoardShader.updateMatrix(gl, view, Shader.MatrixType.VIEW);
+    billBoardShader.updateMatrix(gl, view, Shader.MatrixType.VIEWPROJ);
     Shader.unuse(gl);
   }
   

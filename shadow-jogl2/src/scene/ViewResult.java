@@ -1,5 +1,6 @@
 package scene;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
@@ -38,9 +39,10 @@ public class ViewResult extends SceneOrganizer {
     scene.ShadowMap(gl, true); 
     
     if(texviewer != null) {
-      texviewer.rendering(gl, scene.mapTex, 1024, 0, 640, 640);
+      texviewer.rendering(gl, scene.shadowTbs, 1024, 0, 640, 640);
     }
  
+    scene.setShadowTexCoordSize(SCENE_VIEWPORT[2], SCENE_VIEWPORT[3]);
     scene.renderingToWindow(gl, SCENE_VIEWPORT[0], SCENE_VIEWPORT[1], 
         SCENE_VIEWPORT[2], SCENE_VIEWPORT[3], false);
     
@@ -86,6 +88,12 @@ public class ViewResult extends SceneOrganizer {
 
   @Override
   public void mouseMoved(MouseEvent e){
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void clickButton(ActionEvent e){
     // TODO Auto-generated method stub
     
   }

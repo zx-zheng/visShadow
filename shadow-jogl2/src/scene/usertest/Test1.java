@@ -1,5 +1,6 @@
 package scene.usertest;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -74,6 +75,7 @@ public class Test1 extends SceneOrganizer{
       SCENE_VIEWPORT[i][2] = subSceneWidth;
       SCENE_VIEWPORT[i][3] = subSceneHeight;
     }
+    scene.setShadowTexCoordSize(subSceneWidth, subSceneHeight);
   }
 
   @Override
@@ -156,7 +158,7 @@ public class Test1 extends SceneOrganizer{
       originalProblemSet.remove(index);
     }
     newProblemSet = true;
-    startQuestion();
+    //startQuestion();
   }
   
   private void answer(int ans){
@@ -189,17 +191,17 @@ public class Test1 extends SceneOrganizer{
   @Override
   public void iterate(GL2GL3 gl){
     scene.iterate();
+    
+    if(newProblem){
+      newProblem(gl);
+      newProblem = false;
+    }
+    
     if (isAnswered) {
       isInterval = true; 
       return;
     } else if (isInterval) {
       startQuestion();
-      //return;
-    }
-    
-    if(newProblem){
-      newProblem(gl);
-      newProblem = false;
     }
   }
 
@@ -231,6 +233,11 @@ public class Test1 extends SceneOrganizer{
   public void mouseMoved(MouseEvent e){
     // TODO Auto-generated method stub
     
+  }
+
+  @Override
+  public void clickButton(ActionEvent e){
+    super.clickButton(e);    
   }
 
 }

@@ -76,7 +76,7 @@ public class FBO{
     gl.glDrawBuffers(attachcount, COLOR_ATTACHMENTS, 0);
   }
   
-  public void unbind(GL2GL3 gl){
+  public static void unbind(GL2GL3 gl){
     gl.glDrawBuffers(1, COLOR_ATTACHMENTS, 0);
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
   }

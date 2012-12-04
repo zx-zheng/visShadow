@@ -11,7 +11,7 @@ uniform ivec4 lightsattr[10];
 uniform int divide,shadowswitch,colorset;
 uniform ivec2 lightcount_real_virtual;
 uniform sampler2DArray shadowmap;
-uniform sampler2D weatherTex, mapTex;
+uniform sampler2D weatherTex, mapTex, shadowTex;
 uniform float gamma;
 uniform int L, lab_a, lab_b, shaderange, shadowrange;
 uniform float aspect_Y, canvasAspect = 1;
@@ -20,6 +20,7 @@ uniform float mapoffsetx, mapoffsety, viewoffsetx, viewoffsety;
 uniform float viewscaling = 1;
 uniform int mapadjustmode = 0, mapalpha = 50;
 uniform int lightSize;
+uniform vec2 shadowTexCoordSize;
 
 in geom{
   vec4 worldpos;
@@ -113,9 +114,9 @@ vec3 valuetoshadowcolorRGshadeBY(float value, float shadewide, float shadow){
   Color Red-Green  Shade Blue-Yellow+L
  *-----------------------------------------------------------------*/
 vec3 valuetoshadowcolorRGshadeBYL(float value, float shadewide, float shadow){
-  float l = L;// + shadewide *shaderange*1*1 - shadowrange*(1-shadow) * 1;
+  float l = L + shadewide *shaderange*1*1 - shadowrange*(1-shadow) * 1;
   float a = (value-0.5)* lab_a * 1, b = 1*lab_b* shadewide * 1;
-  vec3 xyz = LabtoXYZ(L,a,b);
+  vec3 xyz = LabtoXYZ(l,a,b);
   //return vec3(l/100);
   return RGBnonlinearRGB(XYZtoRGB(xyz));
 }
@@ -198,8 +199,8 @@ vec2 maptexcoordtransform(vec2 texcoord, float scale,
   //float scaling = mapscaling * 0.02;
   float scaling = pow(2, (mapscaling - 200) * 0.05);
   //scaling = 1;
-  return texcoord  * aspect * 0.5 * scaling * viewscaling 
-    + offset + viewoffset * scaling + vec2(0.5);
+  return texcoord  * aspect * 0.5 * scaling //* viewscaling 
+  + offset;// + viewoffset * scaling ;//+ vec2(0.5);
 }
 
 void main(){
@@ -240,8 +241,8 @@ void main(){
       */
 
       if(lightsattr[i].x * Geom.hswitch==1 )shadowtmp = 1;
-      vec3 lightvec = normalize((inverse(lightsview[i]) * vec4(0,0,0,1)).xyz 
-				- Geom.worldpos.xyz/Geom.worldpos.w);
+      vec3 lightvec = normalize((inverse(lightsview[i]) * vec4(0,0,0,1)).xyz);
+				//- Geom.worldpos.xyz/Geom.worldpos.w);
       float shadetmp = max(0, dot(Geom.normal, lightvec))*lightscolor[i].w;
       float shadewidetmp = dot(Geom.normal, lightvec)*lightscolor[i].w;
       shade += shadetmp;
@@ -249,7 +250,9 @@ void main(){
       shadow += shadowtmp;
       count+=lightscolor[i].w;
     }
-  }   
+  } 
+
+  //count = 1;  
   shade /= count;
   shadewide /= count;
   shadow /= count;
@@ -264,7 +267,6 @@ void main(){
   ///*
   if(colorset==1){
     Color=vec4(1,1,0,1);
-    //Color=vec4(Geom.worldpos.z);
     Color=vec4(vec3(dot(Geom.normal,vec3(0,0,1))),1);
     return;
   }
@@ -275,10 +277,18 @@ void main(){
   //float ratio = 0.5;
   //float uplightshade = dot(Geom.normal, vec3(0,0,1));
 
-  if(shadowswitch == 0)shadow = 1;
+  vec2 shadowTexCoord = Geom.screentexcoord * 0.5 + 0.5;
+  shadowTexCoord.y = 1 - shadowTexCoord.y;
+  shadowTexCoord *= shadowTexCoordSize;
+
+  shadow =  texture(shadowTex, shadowTexCoord).x;
+
+  //if(shadowswitch == 0)shadow = 1;
 
   vec4 mapcolor = texture(mapTex, 
-		   maptexcoordtransform(Geom.screentexcoord, 1, 
+		   maptexcoordtransform(
+					vec2(((Geom.texcoord0 + Geom.Area)/divide).x,
+					     (1-(Geom.texcoord0 + Geom.Area)/divide).y), 1, 
 					vec2(mapoffsetx, mapoffsety),
 					vec2(viewoffsetx, viewoffsety)));
   vec4 visualizedcolor = 
@@ -295,6 +305,16 @@ void main(){
       Color = (0.39 * shadow + 0.61) * mapcolor;
     }
   }
+
+ 
+  Color = visualizedcolor;
+  //Color = vec4(shadow);
+  
+  //Color = texture(shadowTex, shadowTexCoord);
+
+  //Color = vec4(Geom.screentexcoord, 0,1);
+  //Color = vec4(vec2(((Geom.texcoord0 + Geom.Area)/divide).x,
+  //		    (1-(Geom.texcoord0 + Geom.Area)/divide).y), 0, 1);
 
   //Color = vec4(color * (shade * (0.3 * shadow + 0.4) + 0.3) , 1);
   //Color = vec4(color * (shade * (0.6) + 0.4 - (1-shadow)*0.4 * sin(3.14/2*shade)) , 1);

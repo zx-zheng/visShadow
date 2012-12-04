@@ -4,6 +4,8 @@ import gl.TexBindSet;
 import gl.TexUnitManager;
 
 import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import javax.media.opengl.GL;
@@ -15,6 +17,7 @@ import scene.obj.Tiledboard;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
 import za.co.luma.geom.Vector2DDouble;
+import za.co.luma.geom.Vector3DDouble;
 import za.co.luma.math.function.ByteBufferFloat2Wrapper2D;
 import za.co.luma.math.function.ByteBufferFloatWrapper2D;
 import za.co.luma.math.function.RealFunction2DWrapper;
@@ -28,9 +31,14 @@ public class DataSet2D{
   public TexBindSet tex;
   public RealFunction2DWrapper funcHumid, funcHumidP, 
   funcWind, funcWindP;
+  private RealFunction2DWrapper currentFunc;
   public List<Vector2DDouble> dist;
   public PoissonDiskSampler poisson;
   private double MAX;
+  public boolean isChosen = false;
+  private boolean isSort = false;
+  
+  private Vector2DDouble onePoint;
   
   public DataSet2D(String filepath, Tiledboard tboard){
     this.filepath = filepath;
@@ -40,6 +48,7 @@ public class DataSet2D{
   public void init(GL2GL3 gl){
     initDataTex(gl, filepath);
     initDataFunc(filepath, tboard);
+    currentFunc = funcWind;
   }
   
   private void initDataTex(GL2GL3 gl, String filepath){
@@ -107,9 +116,72 @@ public class DataSet2D{
         new RealFunction2DWrapper(humidity, 0, humidity.max(), 0, 1);
   }
   
+  public double getDouble(double x, double y){
+    return currentFunc.getDouble(x, y);
+  }
+  
+  public double getDouble(Vector2DDouble pos){
+    return currentFunc.getDouble(pos.x, pos.y);
+  }
+  
   public void updatePoisson(PoissonDiskSampler pds){
     poisson = pds;
     dist = poisson.sample();
+    isChosen = false;
+    isSort = false;
+  }
+  
+  public void chooseOneRandomPoint(){
+    if(dist == null || isChosen) return;
+    int index = (int) (dist.size() * Math.random());
+    onePoint = dist.get(index);
+    dist.remove(index);
+    isChosen = true;
+  }
+  
+  public void chooseOnePointPercentRange(int from, int to){
+    int index = 
+        (int) ((from + Math.random() * (to - from)) * 0.01 * dist.size());
+    chooseKthLargestPoint(index);
+  }
+  
+  public void chooseKthLargestPoint(int k){
+    if(dist == null) return;
+    sortWind();
+    onePoint = dist.get(k);
+    dist.remove(k);
+    isChosen = true;
+  }
+  
+  public void sortWind(){
+    if(dist == null) return;
+    
+    Collections.sort(dist, new PosWindComparator());
+    isSort = true;
+    
+//    for(int i = 0; i < dist.size(); i++){
+//      Vector2DDouble pos = dist.get(i);
+//      System.out.println(funcWind.getDouble(pos.x, pos.y));
+//    }
+  }
+  
+  class PosWindComparator implements java.util.Comparator<Vector2DDouble> {
+    @Override
+    public int compare(Vector2DDouble pos1, Vector2DDouble pos2){     
+      double diff = funcWind.getDouble(pos1.x, pos1.y) 
+          - funcWind.getDouble(pos2.x, pos2.y);
+      if(diff > 0){
+        return 1;
+      }else if(diff < 0){
+        return -1;
+      }
+      return 0;
+    }
+    
+  }
+  
+  public Vector2DDouble getChosenPoint(){
+    return onePoint;
   }
   
   public double max(){
