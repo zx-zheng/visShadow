@@ -2,21 +2,32 @@ package scene.usertest;
 
 import gui.Ctrlpanel;
 
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.media.opengl.GL2GL3;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JSlider;
+
+import com.sun.media.imageioimpl.plugins.jpeg2000.Box;
 
 import scene.SceneOrganizer;
 import scene.oldTypeScene.Scene1;
 import za.co.luma.geom.Vector2DInt;
 
-public class Test3 extends SceneOrganizer{
-  
+public class Test3Shadow extends SceneOrganizer{
+
+  //ver 1.3 point range 30~90
+  //ver 1.3.1 point range 50~95
+  //ver 1.3.2 point range 65~98
+  private final String TEST_VERSION = "1.3.1";
+  private final String TEST_NAME = "ShadowTest3";
+  //スライダーを大きくする
 //バックグラウンドの明度
   int L = 70;
   
@@ -33,20 +44,25 @@ public class Test3 extends SceneOrganizer{
   
   long intervalTime = 1000;
   
-  private JSlider answerSlider;
+  protected JSlider answerSlider;
   
   private double correctAnsValue;
   
-  private JButton answerButton;
+  protected JButton answerButton;
   
-  public Test3(){
+  private int numberOfQuestionPerShadowRange;
+  
+  public Test3Shadow(){
     super();
     this.numberOfQuestion = 20;
   }
   
-  public Test3(int numberOfQuestion){
+  public Test3Shadow(int numberOfQuestionPerShadowRange){
     super();
-    this.numberOfQuestion = numberOfQuestion;
+    super.TEST_VERSION = this.TEST_VERSION;
+    super.TEST_NAME = this.TEST_NAME;
+    this.numberOfQuestionPerShadowRange = numberOfQuestionPerShadowRange;
+    this.numberOfQuestion = numberOfQuestionPerShadowRange * 8;
   }
   
   public void init(GL2GL3 gl, Scene1 scene){
@@ -55,10 +71,12 @@ public class Test3 extends SceneOrganizer{
     initView();
     setSceneViewport();
     setGUI();
-    newProblem(gl);
+    scene.test3genShadowRangeList(numberOfQuestionPerShadowRange);
+    Ctrlpanel.getInstance().getCtrlPanel().setVisible(true);
+    //newProblem(gl);
   }
   
-  private void initView(){
+  protected void initView(){
     viewpos1 = new float[3];
     viewpos2 = new float[3];
     
@@ -73,34 +91,51 @@ public class Test3 extends SceneOrganizer{
     viewpos2[2] = (float) r;
   }
   
-  private void setSceneViewport(){
+  protected void setSceneViewport(){
     viewport1 = new int[4];
     viewport2 = new int[4];
-    int offset = 10;
+    int offsetx = 10, offsety = 200;
     int width = Math.min(CANVAS_HEIGHT, CANVAS_WIDTH / 2);
-    viewport1[0] = offset;
-    viewport1[1] = offset;
-    viewport1[2] = width - 2 * offset;
-    viewport1[3] = width - 2 * offset;
+    viewport1[0] = offsetx;
+    viewport1[1] = offsety;
+    viewport1[2] = width - 2 * offsetx;
+    viewport1[3] = width - 2 * offsetx;
     
-    viewport2[0] = viewport1[0] + viewport1[2] + offset;
-    viewport2[1] = offset;
-    viewport2[2] = width - 2 * offset;
-    viewport2[3] = width - 2 * offset;
+    viewport2[0] = viewport1[0] + viewport1[2] + offsetx;
+    viewport2[1] = offsety;
+    viewport2[2] = width - 2 * offsetx;
+    viewport2[3] = width - 2 * offsetx;
   }
   
-  private void setGUI(){
+  protected void setGUI(){
     answerSlider = new JSlider(0, 200, 200);
-    Ctrlpanel.getInstance().addSlider(answerSlider, "scaleSlider");
-    
-    answerButton = new JButton("Test3 Answer");
-    Ctrlpanel.getInstance().addButton(answerButton);
+    answerSlider.setPreferredSize(new Dimension(400, 50));
+    answerSlider.setVisible(false);
+//    Ctrlpanel.getInstance().addSlider(
+//        Ctrlpanel.getInstance().getUserTestPane(), answerSlider, "Test3ScaleSlider");
+    Ctrlpanel.getInstance().getUserTestPane().add(answerSlider);
+    Ctrlpanel.getInstance().getUserTestPane().add(javax.swing.Box.createRigidArea(new Dimension(50, 10)));
+    answerButton = new JButton("Answer");
+    answerButton.setVisible(false);
+    Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), answerButton);
   }
   
   @Override
   public void setCanvasSize(GL2GL3 gl, int width, int height){
     super.setCanvasSize(gl, width, height);
     setSceneViewport();
+  }
+  
+  @Override
+  protected void showAnswerButton(){
+    answerSlider.setVisible(true);
+    answerButton.setVisible(true);
+  }
+  
+  @Override
+  protected void hideAnswerButton(){
+    answerSlider.setVisible(false);
+    answerButton.setVisible(false);
   }
   
   @Override
@@ -124,7 +159,6 @@ public class Test3 extends SceneOrganizer{
 
   @Override
   public void rendering(GL2GL3 gl){
-
     clearWindow(gl, clearColor);
 
     if (newProblem){
@@ -147,7 +181,7 @@ public class Test3 extends SceneOrganizer{
   
   
   @Override
-  public void showQuestion(GL2GL3 gl){
+  protected void showQuestion(GL2GL3 gl){
     
     gl.glViewport(viewport1[0], viewport1[1], 
         viewport1[2], viewport1[3]);
@@ -156,7 +190,7 @@ public class Test3 extends SceneOrganizer{
         0, 0, 0, 0, 1, 0);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
-    scene.test3Rendering1(gl);
+    scene.test3ShadowRendering1(gl);
     
     
     gl.glViewport(viewport2[0], viewport2[1], 
@@ -166,7 +200,7 @@ public class Test3 extends SceneOrganizer{
         0, 0, 0, 0, 1, 0);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
-    scene.test3Rendering2(gl);
+    scene.test3ShadowRendering2(gl);
   }
 
   @Override
@@ -195,13 +229,47 @@ public class Test3 extends SceneOrganizer{
     return value / 100f;
   }
   
+  
+  protected void initOutFile(){
+    super.initOutFile();
+    answerOutput +=
+        "lab_l = " + Integer.toString(scene.lab_l.getValue()) + "\n"
+        + "lab_a = " + Integer.toString(scene.lab_a.getValue()) + "\n"
+        + "lab_b = " + Integer.toString(scene.lab_b.getValue()) + "\n"
+        + "shadeRange = " + Integer.toString(scene.shaderange.getValue()) + "\n"
+        + "poissonInterval = " + Integer.toString(scene.possioninterval.getValue()) + "\n"
+        + "viewScale = " + Integer.toString(scene.viewScale.getValue()) + "\n"
+        +"error, correct, posx, posy, temperature, shadowRange, time\n";
+  }
+  
   private void answer(){
+    if(!answerCheck()) return;
     double error = 
         sliderValueConvert(answerSlider.getValue()) - correctAnsValue;
-    answerOutput += Double.toString(error) + ", ";
+    answerOutput += Double.toString(error) 
+        + ", " 
+        + Double.toString(correctAnsValue)
+        + ", "
+        + Double.toString(scene.currentData.getChosenPoint().x)
+        + ", "
+        + Double.toString(scene.currentData.getChosenPoint().y)
+        + ", "
+        + Double.toString(scene.currentData.funcTemp.getDouble(
+                scene.currentData.getChosenPoint().x, 
+                scene.currentData.getChosenPoint().y))
+        + ", "
+        + Integer.toString(scene.shadowrange.getValue()) 
+        + ", ";
     System.out.println(error);
     answerSlider.setValue(answerSlider.getMaximum());
     endQuestion();
+  }
+  
+  @Override
+  protected void resetTest(){
+    super.resetTest();
+    answerSlider.setValue(answerSlider.getMaximum());
+    scene.test3genShadowRangeList(numberOfQuestionPerShadowRange);
   }
 
   @Override

@@ -3,6 +3,7 @@ package main;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -20,6 +21,7 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.GLCapabilities;
 import javax.media.opengl.awt.GLCanvas;
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -40,8 +42,10 @@ import scene.SceneRender;
  */
 public class JOGL2Template implements
 MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
+  private static final int WINDOW_WIDTH = 1920;
+  private static final int WINDOW_HEIGHT = 1024;
   private static final int CANVAS_WIDTH = 1920;  // Width of the drawable
-  private static final int CANVAS_HEIGHT = 1024; // Height of the drawable
+  private static final int CANVAS_HEIGHT = 1200; // Height of the drawable
   private static final int FPS = 30;   // Animator's target frames per second
   SceneRender sr;
   Ctrlpanel ctrlpanel;
@@ -53,7 +57,8 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     GLProfile glp = GLProfile.get(GLProfile.GL4bc);
     // Specifies a set of OpenGL capabilities, based on your profile.
     GLCapabilities caps = new GLCapabilities(glp);
-    caps.setNumSamples(2); // enable anti aliasing - just as a example
+    caps.setSampleBuffers(true);
+    caps.setNumSamples(8); // enable anti aliasing - just as a example
     // Allocate a GLDrawable, based on your OpenGL capabilities.
     glcanvas = new GLCanvas(caps);
     glcanvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
@@ -107,10 +112,22 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
       }
     });
 
-    jframe.getContentPane().add(glcanvas, BorderLayout.CENTER);
-    jframe.getContentPane().add(Ctrlpanel.getInstance().getPanel(), 
+//    jframe.getContentPane().add(glcanvas, BorderLayout.CENTER);
+//    jframe.getContentPane().add(Ctrlpanel.getInstance().getCtrlPanel(), 
+//        BorderLayout.EAST);
+//    jframe.getContentPane().add(Ctrlpanel.getInstance().getUserTestPane(), 
+//        BorderLayout.NORTH);
+    
+    jframe.getContentPane().setLayout(new FlowLayout());
+    JPanel mainPanel = new JPanel();
+    mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+    mainPanel.add(Ctrlpanel.getInstance().getUserTestPane());
+    mainPanel.add(glcanvas);
+    jframe.getContentPane().add(mainPanel);
+    jframe.getContentPane().add(Ctrlpanel.getInstance().getCtrlPanel(), 
         BorderLayout.EAST);
-    jframe.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    jframe.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     jframe.setVisible(true);
     animator.start();
   }

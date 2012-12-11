@@ -4,6 +4,8 @@ import gl.Shader;
 import gl.TexUnitManager;
 
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,17 +34,34 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   public static Ctrlpanel getInstance(){
     return Ctrlpanel.instance;
   }
-  JPanel panel = new JPanel();
+  JPanel ctrlPanel = new JPanel();
+  JPanel userTestPanel = new JPanel();
   //ArrayList<JComponent> list = new ArrayList<JComponent>();
   public Scene scene;
   public SceneRender sceneRender;
   
   public Ctrlpanel(){
-    panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+    ctrlPanel.setLayout(new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS));
+    ctrlPanel.setVisible(true);
+    //userTestPanel.setLayout(new BoxLayout(userTestPanel, BoxLayout.Y_AXIS));
+    //userTestPanel.setLayout(new GridLayout(2, 3));
+    userTestPanel.setLayout(new FlowLayout());
   }
   
-  public JPanel getPanel(){
-    return panel;
+  public void showCtrlPanel(){
+    ctrlPanel.setVisible(true);
+  }
+  
+  public void hideCtrlPanel(){
+    ctrlPanel.setVisible(false);
+  }
+  
+  public JPanel getCtrlPanel(){
+    return ctrlPanel;
+  }
+  
+  public JPanel getUserTestPane(){
+    return userTestPanel;
   }
   
   
@@ -54,12 +73,12 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   
   public void adduniformcheckbox(UniformJCheckBox checkbox){
     checkbox.addItemListener(this);
-    panel.add(checkbox);
+    ctrlPanel.add(checkbox);
   }
   
   public void addscenecheckbox(SceneJCheckBox cbox){
     cbox.addItemListener(this);
-    panel.add(cbox);
+    ctrlPanel.add(cbox);
   }
   
   public void adduniformslider(int min, int max, int value, String text, String name,Shader shader){
@@ -69,9 +88,9 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   
   public void addJSlider(String text, JSlider slider){
     JLabel label = new JLabel(text);
-    panel.add(label);
+    ctrlPanel.add(label);
     slider.addChangeListener(this);
-    panel.add(slider);
+    ctrlPanel.add(slider);
   }
   
   public void addLightCtrl(int count, Scene scene){
@@ -90,14 +109,18 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
       index[i]=String.valueOf(i);
     }
     JLabel label = new JLabel(text);
-    panel.add(label);
+    ctrlPanel.add(label);
     JComboBox combobox = new JComboBox(index);
     combobox.setPreferredSize(new Dimension(100, 50));
     combobox.addActionListener(this);
-    panel.add(combobox);
+    ctrlPanel.add(combobox);
   }
   
   public void addSlider(JSlider slider, String text) {
+    addSlider(ctrlPanel, slider, text);
+  }
+  
+  public void addSlider(JPanel panel, JSlider slider, String text) {
     JLabel label = new JLabel(text);
     panel.add(label);
     slider.addChangeListener(this);
@@ -105,6 +128,11 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   }
   
   public void addButton(JButton button){
+    button.addActionListener(this);
+    ctrlPanel.add(button);
+  }
+  
+  public void addButton(JPanel panel, JButton button){
     button.addActionListener(this);
     panel.add(button);
   }

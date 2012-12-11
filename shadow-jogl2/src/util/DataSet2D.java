@@ -30,7 +30,7 @@ public class DataSet2D{
   private Tiledboard tboard;
   public TexBindSet tex;
   public RealFunction2DWrapper funcHumid, funcHumidP, 
-  funcWind, funcWindP;
+  funcWind, funcWindP, funcTemp;
   private RealFunction2DWrapper currentFunc;
   public List<Vector2DDouble> dist;
   public PoissonDiskSampler poisson;
@@ -78,7 +78,7 @@ public class DataSet2D{
 
     Tex2D weatherTex = new Tex2D(GL2.GL_RGBA16F, GL2.GL_RGBA, 
         GL.GL_FLOAT, spl0.width(), spl0.height(), 
-        GL.GL_LINEAR, buffer, "wheather data");
+        GL.GL_NEAREST, buffer, "wheather data");
     weatherTex.init(gl);
     tex = new TexBindSet(weatherTex);
   }
@@ -94,6 +94,10 @@ public class DataSet2D{
     Load2Dfloat humid = 
         new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
     humid.load();
+    
+    Load2Dfloat temp = 
+        new Load2Dfloat(filepath + "Temperature_2.0m_T0.txt");
+    temp.load();
    
     ByteBufferFloat2Wrapper2D windspeed = 
         new ByteBufferFloat2Wrapper2D(tboard.leftdownx, tboard.leftdowny, 
@@ -105,6 +109,12 @@ public class DataSet2D{
         tboard.leftdownx + tboard.width, tboard.leftdowny + tboard.height,
         humid.width, humid.height, 
         humid.getbuffer());
+    ByteBufferFloatWrapper2D temperature = 
+        new ByteBufferFloatWrapper2D(tboard.leftdownx, tboard.leftdowny, 
+        tboard.leftdownx + tboard.width, tboard.leftdowny + tboard.height,
+        temp.width, temp.height, 
+        temp.getbuffer());
+    
     funcWindP = 
         new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0.2, 1);
     funcWind = 
@@ -114,6 +124,8 @@ public class DataSet2D{
         new RealFunction2DWrapper(humidity, 0, humidity.max(), 0.2, 1);
     funcHumid = 
         new RealFunction2DWrapper(humidity, 0, humidity.max(), 0, 1);
+    funcTemp = 
+        new RealFunction2DWrapper(temperature, 0, temperature.max(), 0, 1);
   }
   
   public double getDouble(double x, double y){

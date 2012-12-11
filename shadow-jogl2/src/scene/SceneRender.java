@@ -29,7 +29,8 @@ import scene.usertest.ColorMosaic;
 import scene.usertest.PatternMatchTest;
 import scene.usertest.Test1;
 import scene.usertest.Test2;
-import scene.usertest.Test3;
+import scene.usertest.Test3Color;
+import scene.usertest.Test3Shadow;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
 
@@ -61,7 +62,8 @@ public class SceneRender extends GuiVariables{
   ViewResult viewResult;
   Test1 test1;
   Test2 test2;
-  Test3 test3;
+  Test3Shadow test3Shadow;
+  Test3Color test3Color;
   
   public void init(GL2GL3 gl){
     timer.init(gl);
@@ -124,25 +126,6 @@ public class SceneRender extends GuiVariables{
         "resources/ShaderSource/ShadowMapping/frag.c");
     shadowmappingtess.init(gl);
     
-    shadowmappingtess.adduniform(gl, "shadowswitch", 0);
-    Ctrlpanel.getInstance().adduniformcheckbox("shadow", false, "shadowswitch", shadowmappingtess);
-    
-    shadowmappingtess.adduniform(gl, "L", 70);
-    Ctrlpanel.getInstance().adduniformslider(0, 100, 70, "ground L", "L", shadowmappingtess);
-    
-    shadowmappingtess.adduniform(gl, "lab_a", 90);
-    Ctrlpanel.getInstance().adduniformslider(0, 170, 90, "ground color", "lab_a", shadowmappingtess);
-    
-    shadowmappingtess.adduniform(gl, "lab_b", 10);
-    Ctrlpanel.getInstance().adduniformslider(0, 150, 10, "shade lab_b", "lab_b", shadowmappingtess);
-    
-    shadowmappingtess.adduniform(gl, "shaderange", 15);
-    Ctrlpanel.getInstance().adduniformslider(0, 50, 15, "shade range", "shaderange", shadowmappingtess);
-    
-    shadowmappingtess.adduniform(gl, "shadowrange", 30);
-    Ctrlpanel.getInstance().adduniformslider(0, 100, 30, "shadow range", "shadowrange", shadowmappingtess);
-    
-    
     tex = new Tex2D(GL2.GL_RGBA, GL2.GL_RGBA,
         GL2.GL_FLOAT, 1024, 1024,
         GL2.GL_LINEAR, GL2.GL_REPEAT, GL2.GL_REPEAT,
@@ -173,16 +156,20 @@ public class SceneRender extends GuiVariables{
 //    viewResult.addTexViewer(texviewer);
 //    currentSO = viewResult;
     
-    test1 = new Test1();
-    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
-    currentSO = test1;
+//    test1 = new Test1();
+//    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
+//    currentSO = test1;
     
 //    test2 = new Test2(gl, scene);
 //    currentSO = test2;
     
-//    test3 = new Test3(10);
-//    test3.init(gl, scene);
-    //currentSO = test3;
+    test3Shadow = new Test3Shadow(8);
+    test3Shadow.init(gl, scene);
+    currentSO = test3Shadow;
+    
+//    test3Color = new Test3Color();
+//    test3Color.init(gl, scene);
+//    currentSO = test3Color;
     
 //    PatternMatchTest pmt = new PatternMatchTest(8);
 //    pmt.init(gl);
@@ -190,7 +177,7 @@ public class SceneRender extends GuiVariables{
   }
   
   public void rendering(GL2GL3 gl){
-    updateCanvasSize(gl);test3 = new Test3(10);
+    updateCanvasSize(gl);test3Shadow = new Test3Shadow(10);
 //  
     currentSO.rendering(gl);
     currentSO.iterate(gl);
