@@ -11,6 +11,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Calendar;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
@@ -34,6 +38,7 @@ public abstract class SceneOrganizer{
   protected long elapsedTime = 0;
   protected long startTime = 0;
   protected long sumOfAnswerTime = 0;
+  protected long intervalTime = 1000;
   protected boolean isMeasuring = false;
   protected boolean isAnswered = false;
   protected boolean isInterval = false;
@@ -51,8 +56,11 @@ public abstract class SceneOrganizer{
   public int CANVAS_HEIGHT;
   
   protected static JButton startTestButton, startDemoButton, endDemoButton;
-  private static boolean isStartButtonAdd = false,
-      isStartDemoButtonAdd = false;
+  private static boolean isFirst = true;
+  
+  static ScheduledExecutorService intervalScheduler;
+  static IntervalSchedule intervalSchedule;
+  static ScheduledFuture scheduledFuture;
 
   abstract public void rendering(GL2GL3 gl);
   abstract public void iterate(GL2GL3 gl);
@@ -64,23 +72,27 @@ public abstract class SceneOrganizer{
   abstract public void switchSO(GL2GL3 gl);
   
   public SceneOrganizer(){
-    if(!isStartButtonAdd){
+    if(isFirst){
       startTestButton = new JButton("Start Test");
       Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), startTestButton);
-      isStartButtonAdd = true;
-    }
-    if(!isStartDemoButtonAdd){
       startDemoButton = new JButton("Start Demo");
       Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), startDemoButton);
       endDemoButton = new JButton("End Demo");
       endDemoButton.setVisible(false);
       Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), endDemoButton);
-      isStartDemoButtonAdd = true;
+      intervalScheduler = Executors.newSingleThreadScheduledExecutor();
+      intervalSchedule = new IntervalSchedule();
+      isFirst = false;
     }
   }
   
   protected void initClearColor(int L){
     clearColor = ColorUtil.LabtoRGB(L, 0, 0);
+  }
+  
+  protected void SetTestNameVersion(String Name, String Version){
+    this.TEST_NAME = Name;
+    this.TEST_VERSION = Version;
   }
   
   public void clearWindow(GL2GL3 gl){
@@ -127,7 +139,9 @@ public abstract class SceneOrganizer{
     }
     //Ctrlpanel.getInstance().getCtrlPanel().setVisible(true);
     showAnswerButton();
-    startQuestion();
+    scheduledFuture = 
+        intervalScheduler.schedule(intervalSchedule, intervalTime, TimeUnit.MILLISECONDS);
+    //startQuestion();
   }
   
   protected void showAnswerButton(){
@@ -142,6 +156,7 @@ public abstract class SceneOrganizer{
     isQuestioning = true;
     isAnswered = false;
     isInterval = false;
+    nextProblem = false;
     newProblem();
     startMeasureTime();
   }
@@ -152,6 +167,9 @@ public abstract class SceneOrganizer{
     answerOutput += elapsedTime + "\n";
     isQuestioning = false;
     isAnswered = true;
+    intervalSchedule.isInterval = true;
+    scheduledFuture = 
+        intervalScheduler.schedule(intervalSchedule, intervalTime, TimeUnit.MILLISECONDS);
   }
   
   protected void correct(){
@@ -220,10 +238,12 @@ public abstract class SceneOrganizer{
   }
   
   public void endDemo(){
+    System.out.println("End Demo");
     resetTest();
   }
   
   protected void resetTest(){
+    scheduledFuture.cancel(true);
     elapsedTime = 0;
     startTime = 0;
     sumOfAnswerTime = 0;
@@ -263,4 +283,15 @@ public abstract class SceneOrganizer{
     }
   }
   
+  
+  class IntervalSchedule implements Runnable{
+
+    public boolean isInterval = false;
+    @Override
+    public void run(){
+      isInterval = false;
+      nextProblem = true;
+    }
+    
+  }
 }

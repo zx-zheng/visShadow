@@ -8,11 +8,13 @@ uniform mat4 viewproj[4];
 
 in vec3 Normal[];
 in vec2 texcoord0[];
+		  in vec3 color[];
 
 out geom{
   vec4 worldpos;
   vec3 normal;
   vec2 texcoord0;
+  vec3 color;
   vec2 screentexcoord; //(-1,-1):leftdown of screen (1,1):upright
 }Geom;
 
@@ -26,6 +28,7 @@ void main(){
     Geom.texcoord0 = texcoord0[i];
     Geom.screentexcoord 
       = vec2(gl_Position.x, -gl_Position.y) / gl_Position.w;
+    Geom.color = color[i];
     EmitVertex();
   }
   EndPrimitive();  

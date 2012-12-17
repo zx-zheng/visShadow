@@ -1,24 +1,20 @@
 #version 400 core
 
-#define ATTR_POSITION 0
-#define ATTR_NORMAL 1
-#define ATTR_COLOR 2
-#define ATTR_TEXCOORD0_INDX 3
-#define ATTR_AREA 6
+#define FRAG_COLOR 0
 
-uniform mat4 model;
-uniform vec3 inColorLab; 
+layout(location = FRAG_COLOR, index = 0) out vec4 Color;
 
-layout(location = ATTR_POSITION) in vec3 vertex;
-layout(location = ATTR_COLOR) in vec4 Color;
-layout(location = ATTR_TEXCOORD0_INDX) in vec2 texcoord0in;
-layout(location = ATTR_NORMAL) in vec3 Normalin;
-layout(location = ATTR_AREA) in vec2 Areain;
+uniform vec3 inColorLab;
+uniform sampler2D shadowTex;
+uniform vec2 shadowTexCoordSize;
+uniform int shadowRange = 10;
 
-
-out vec3 Normal;
-out vec2 texcoord0;
-out vec3 color;
+in geom{
+  vec3 normal;
+  vec2 texcoord0;
+  vec2 screentexcoord;
+  vec3 color;
+}Geom;
 
 vec3 LabtoXYZ(float l,float a,float b){
   float xn = 0.9505;
@@ -49,8 +45,18 @@ vec3 RGBnonlinearRGB(vec3 rgb){
   return vec3(rd,gd,bd);
 }
 
+
 void main(){
-  gl_Position = model * vec4(vertex, 1.0);
-  texcoord0 = texcoord0in;
-  
+  vec2 shadowTexCoord = Geom.screentexcoord * 0.5 + 0.5;
+  shadowTexCoord.y = 1 - shadowTexCoord.y;
+  shadowTexCoord *= shadowTexCoordSize;
+  float shadow =  texture(shadowTex, shadowTexCoord).x;
+  Color =
+    vec4
+    (RGBnonlinearRGB
+	 (XYZtoRGB
+	  (LabtoXYZ
+	   (inColorLab.x - shadowRange * (1 - shadow), 
+	    inColorLab.y, 
+	    inColorLab.z))), 1);
 }

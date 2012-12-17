@@ -59,8 +59,7 @@ public class Test3Shadow extends SceneOrganizer{
   
   public Test3Shadow(int numberOfQuestionPerShadowRange){
     super();
-    super.TEST_VERSION = this.TEST_VERSION;
-    super.TEST_NAME = this.TEST_NAME;
+    SetTestNameVersion(TEST_NAME, TEST_VERSION);
     this.numberOfQuestionPerShadowRange = numberOfQuestionPerShadowRange;
     this.numberOfQuestion = numberOfQuestionPerShadowRange * 8;
   }
@@ -73,7 +72,6 @@ public class Test3Shadow extends SceneOrganizer{
     setGUI();
     scene.test3genShadowRangeList(numberOfQuestionPerShadowRange);
     Ctrlpanel.getInstance().getCtrlPanel().setVisible(true);
-    //newProblem(gl);
   }
   
   protected void initView(){
@@ -140,13 +138,7 @@ public class Test3Shadow extends SceneOrganizer{
   
   @Override
   public void newProblem(){
-    newProblem = true;
-  }
-  
-  @Override
-  public void endQuestion(){
-    super.endQuestion();
-    newProblemSet = false;
+    
   }
   
   private void newProblem(GL2GL3 gl){
@@ -161,17 +153,7 @@ public class Test3Shadow extends SceneOrganizer{
   public void rendering(GL2GL3 gl){
     clearWindow(gl, clearColor);
 
-    if (newProblem){
-      return;
-    }
-    
-    if(isInterval){
-      interval(gl, intervalTime);
-      System.out.println("interval");
-      return;
-    }
-
-    if(isQuestioning & newProblemSet){
+    if(isQuestioning){
       showQuestion(gl);
     }
 
@@ -205,24 +187,16 @@ public class Test3Shadow extends SceneOrganizer{
 
   @Override
   public void iterate(GL2GL3 gl){
-    if (numberOfAnsweredQuestion == numberOfQuestion) {
-      endTest();
-    }
-    
     scene.iterate();
     scene.test3SetAnswer(sliderValueConvert(answerSlider.getValue()));
     
-    if(newProblem){
+    if (!isDemo & numberOfAnsweredQuestion == numberOfQuestion) {
+      endTest();
+    } else if (nextProblem) {
       newProblem(gl);
-      newProblem = false;
-    }
-    
-    if (isAnswered) {
-      isInterval = true; 
-      return;
-    } else if (isInterval) {
       startQuestion();
     }
+    
   }
   
   private float sliderValueConvert(int value){

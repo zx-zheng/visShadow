@@ -27,7 +27,9 @@ import scene.templateScene.Filter;
 import scene.templateScene.TexViewer;
 import scene.usertest.ColorMosaic;
 import scene.usertest.PatternMatchTest;
+import scene.usertest.PatternMatchTest2;
 import scene.usertest.Test1;
+import scene.usertest.Test1_2;
 import scene.usertest.Test2;
 import scene.usertest.Test3Color;
 import scene.usertest.Test3Shadow;
@@ -61,9 +63,12 @@ public class SceneRender extends GuiVariables{
   SceneOrganizer currentSO;
   ViewResult viewResult;
   Test1 test1;
+  Test1_2 test1_2;
   Test2 test2;
   Test3Shadow test3Shadow;
   Test3Color test3Color;
+  PatternMatchTest pmt;
+  PatternMatchTest2 pmt2;
   
   public void init(GL2GL3 gl){
     timer.init(gl);
@@ -160,20 +165,28 @@ public class SceneRender extends GuiVariables{
 //    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
 //    currentSO = test1;
     
+//    test1_2 = new Test1_2(5);
+//    test1_2.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
+//    currentSO = test1_2;
+    
 //    test2 = new Test2(gl, scene);
 //    currentSO = test2;
     
-    test3Shadow = new Test3Shadow(8);
-    test3Shadow.init(gl, scene);
-    currentSO = test3Shadow;
+//    test3Shadow = new Test3Shadow(8);
+//    test3Shadow.init(gl, scene);
+//    currentSO = test3Shadow;
     
 //    test3Color = new Test3Color();
 //    test3Color.init(gl, scene);
 //    currentSO = test3Color;
     
-//    PatternMatchTest pmt = new PatternMatchTest(8);
+//    pmt = new PatternMatchTest(8);
 //    pmt.init(gl);
-    //currentSO = pmt;
+//    currentSO = pmt;
+    
+    pmt2 = new PatternMatchTest2(1);
+    pmt2.init(gl);
+    currentSO = pmt2;
   }
   
   public void rendering(GL2GL3 gl){
@@ -202,11 +215,6 @@ public class SceneRender extends GuiVariables{
   
   public void mouseDragged(MouseEvent e){
     currentSO.mouseDragged(e);
-
-////      mouseToWorldCoord(x, y, viewport, proj, loader, scene.tboard, heightctrl);
-////      border = (float)y/(float)viewport[3]-0.1f;
-////      switched = true;
-
   }
   
   private void mouseToWorldCoord(int x, int y, int[] viewport, float[] proj,
@@ -306,6 +314,9 @@ public class SceneRender extends GuiVariables{
   }
   
   public void mouseMoved(MouseEvent e){
+    if(currentSO == null){
+      return;
+    }
     currentSO.mouseMoved(e);
   }
   

@@ -4,26 +4,27 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import javax.media.opengl.*;
 
+import main.Main;
+
 import scene.SceneOrganizer;
 import scene.oldTypeScene.Scene;
 import scene.oldTypeScene.Scene1;
 import za.co.luma.geom.Vector2DInt;
 
-public class Test1 extends SceneOrganizer{
+public class Test1_2 extends SceneOrganizer{
   
   int L = 70;
   
   long centerShowTime = 1500;
   long intervalTime = 1000;
   boolean SHOW_QUESTION = true;
-  boolean newProblem = false;
-  boolean newProblemSet = false;
   Scene1 scene;
   private int[][] SCENE_VIEWPORT = new int[5][4];
   
@@ -46,10 +47,10 @@ public class Test1 extends SceneOrganizer{
   
   ScheduledExecutorService scheduler;
   ScheduledFuture scheduledFuture;
-  HideSchedule hideSchedule = new HideSchedule();
+  HideSchedule hideSchedule;
   
-  public Test1() {
-
+  public Test1_2(int numberOfQuestion) {
+    this.numberOfQuestion = numberOfQuestion;
   }
   
   public void init(GL2GL3 gl, Scene1 scene, int width, int height){
@@ -57,7 +58,9 @@ public class Test1 extends SceneOrganizer{
     initoriginalProblemSet();
     this.scene = scene;
     setSceneViewport(width, height);
-    newProblem(gl);
+    hideSchedule = new HideSchedule();
+    scheduler = Executors.newSingleThreadScheduledExecutor();
+    //newProblem(gl);
   }
   
   private void initoriginalProblemSet(){
@@ -85,22 +88,19 @@ public class Test1 extends SceneOrganizer{
     }
     scene.setShadowTexCoordSize(subSceneWidth, subSceneHeight);
   }
+  
+  @Override
+  protected void startTest(){
+    Main.requestFocus();
+    super.startTest();
+  }
 
   @Override
   public void rendering(GL2GL3 gl) {
     gl.glBindFramebuffer(GL2.GL_FRAMEBUFFER, 0);
     clearWindow(gl, clearColor);
     
-    if (newProblem){
-      return;
-    }
-    
-    if(isInterval){
-      interval(gl, intervalTime);
-      return;
-    }
-    
-    if(isQuestioning & newProblemSet){
+    if(isQuestioning){
       showQuestion(gl);
     }
     gl.glFlush();
@@ -131,31 +131,17 @@ public class Test1 extends SceneOrganizer{
       scene.test1Rendering(gl);
     }
   }
-  
-  public void questionOld(GL2GL3 gl){
-    //周辺の表示
-    for (int i = 0; 
-        i < Math.min(SUBSCENE_OFFSET.length, choiceList.size()); i++) {
-      scene.setTargetData(gl, choiceList.get(i));
-      scene.renderingToWindow(gl, SCENE_VIEWPORT[i][0], SCENE_VIEWPORT[i][1],
-          SCENE_VIEWPORT[i][2], SCENE_VIEWPORT[i][3], false);
-    }
-    //中心の表示
-    //scene.ShadowMap(gl, true);
-    scene.setTargetData(gl, choiceList.get(answerNum));
-    scene.renderingToWindow(gl, SCENE_VIEWPORT[4][0], SCENE_VIEWPORT[4][1],
-        SCENE_VIEWPORT[4][2], SCENE_VIEWPORT[4][3], false);
-  }
-  
-  @Override
-  public void newProblem(){
-    newProblem = true;
-  }
-  
+ 
   @Override
   public void endQuestion(){
     super.endQuestion();
-    newProblemSet = false;
+  }
+  
+  //表示時間の精度上げるために別の場所
+  @Override
+  public void newProblem(){
+    scheduledFuture = 
+        scheduler.schedule(hideSchedule, centerShowTime, TimeUnit.MILLISECONDS);
   }
   
   private void newProblem(GL2GL3 gl){
@@ -169,10 +155,8 @@ public class Test1 extends SceneOrganizer{
       int index = (int) (Math.random() * originalProblemSet.size());
       problemSet.add(originalProblemSet.get(index));
       originalProblemSet.remove(index);
-    }
-    newProblemSet = true;
-    //startQuestion();
-    scheduledFuture = scheduler.schedule(hideSchedule, centerShowTime, TimeUnit.MILLISECONDS);
+    }  
+    hideSchedule.show = true;
   }
   
   private void answer(int ans){
@@ -206,15 +190,10 @@ public class Test1 extends SceneOrganizer{
   public void iterate(GL2GL3 gl){
     scene.iterate();
     
-    if(newProblem){
+    if (!isDemo & numberOfAnsweredQuestion == numberOfQuestion) {
+      endTest();
+    } else if (nextProblem) {
       newProblem(gl);
-      newProblem = false;
-    }
-    
-    if (isAnswered) {
-      isInterval = true; 
-      return;
-    } else if (isInterval) {
       startQuestion();
     }
   }

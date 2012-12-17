@@ -342,8 +342,8 @@ public class Scene1 extends Scene {
     dataSetCount = 0;
     String filepath = "/home/michael/zheng/Programs/WeatherData/2009100818/";
     addData(gl, filepath);
-//    filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
-//    addData(gl, filepath);
+    filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
+    addData(gl, filepath);
 //    filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
 //    addData(gl, filepath);
 //    filepath = "/home/michael/zheng/Programs/WeatherData/2009100800/";

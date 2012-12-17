@@ -17,9 +17,11 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -34,18 +36,34 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   public static Ctrlpanel getInstance(){
     return Ctrlpanel.instance;
   }
+  
+  static JFrame settingFrame;// = new JFrame("Settings");
   JPanel ctrlPanel = new JPanel();
   JPanel userTestPanel = new JPanel();
-  //ArrayList<JComponent> list = new ArrayList<JComponent>();
+
   public Scene scene;
   public SceneRender sceneRender;
   
   public Ctrlpanel(){
     ctrlPanel.setLayout(new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS));
     ctrlPanel.setVisible(true);
-    //userTestPanel.setLayout(new BoxLayout(userTestPanel, BoxLayout.Y_AXIS));
-    //userTestPanel.setLayout(new GridLayout(2, 3));
+   
     userTestPanel.setLayout(new FlowLayout());
+  }
+  
+  public void initSettingFrame(){
+    settingFrame = new JFrame("Settings");
+    settingFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+    settingFrame.getContentPane().setLayout(new FlowLayout());
+       
+    settingFrame.setSize(300, 1000);
+    settingFrame.getContentPane().add(ctrlPanel);
+    SwingUtilities.invokeLater(new Runnable(){
+      @Override
+      public void run(){
+        settingFrame.setVisible(true);
+      }
+    });
   }
   
   public void showCtrlPanel(){

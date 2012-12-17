@@ -40,19 +40,23 @@ import scene.SceneRender;
 /*
  * JOGL 2.0 Program Template For AWT applications
  */
-public class JOGL2Template implements
+public class Main implements
 MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
   private static final int WINDOW_WIDTH = 1920;
   private static final int WINDOW_HEIGHT = 1024;
-  private static final int CANVAS_WIDTH = 1920;  // Width of the drawable
+  private static final int CANVAS_WIDTH = 1600;  // Width of the drawable
   private static final int CANVAS_HEIGHT = 1200; // Height of the drawable
   private static final int FPS = 30;   // Animator's target frames per second
   SceneRender sr;
   Ctrlpanel ctrlpanel;
-  GLCanvas glcanvas;
+  static GLCanvas glcanvas;
+  
+  public static void requestFocus(){
+    glcanvas.requestFocus();
+  }
 
   // Constructor to create profile, caps, drawable, animator, and initialize Frame
-  public JOGL2Template() {
+  public Main() {
     // Get the default OpenGL profile that best reflect your running platform.
     GLProfile glp = GLProfile.get(GLProfile.GL4bc);
     // Specifies a set of OpenGL capabilities, based on your profile.
@@ -66,7 +70,8 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     final FPSAnimator animator = new FPSAnimator(glcanvas, FPS, true);
 
     final JFrame jframe = new JFrame( "One Triangle Swing GLCanvas" ); 
-
+    
+    
     glcanvas.addGLEventListener( new GLEventListener() {
 
       @Override
@@ -111,12 +116,6 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
         }.start();
       }
     });
-
-//    jframe.getContentPane().add(glcanvas, BorderLayout.CENTER);
-//    jframe.getContentPane().add(Ctrlpanel.getInstance().getCtrlPanel(), 
-//        BorderLayout.EAST);
-//    jframe.getContentPane().add(Ctrlpanel.getInstance().getUserTestPane(), 
-//        BorderLayout.NORTH);
     
     jframe.getContentPane().setLayout(new FlowLayout());
     JPanel mainPanel = new JPanel();
@@ -124,16 +123,15 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     mainPanel.add(Ctrlpanel.getInstance().getUserTestPane());
     mainPanel.add(glcanvas);
     jframe.getContentPane().add(mainPanel);
-    jframe.getContentPane().add(Ctrlpanel.getInstance().getCtrlPanel(), 
-        BorderLayout.EAST);
     
     jframe.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
     jframe.setVisible(true);
+    Ctrlpanel.getInstance().initSettingFrame();
     animator.start();
   }
 
   public static void main(String[] args) {
-    new JOGL2Template();
+    new Main();
   }
 
   public void init_(GLAutoDrawable drawable) {
