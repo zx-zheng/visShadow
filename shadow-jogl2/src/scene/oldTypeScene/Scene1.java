@@ -342,8 +342,8 @@ public class Scene1 extends Scene {
     dataSetCount = 0;
     String filepath = "/home/michael/zheng/Programs/WeatherData/2009100818/";
     addData(gl, filepath);
-    filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
-    addData(gl, filepath);
+//    filepath = "/home/michael/zheng/Programs/WeatherData/2009100718/";
+//    addData(gl, filepath);
 //    filepath = "/home/michael/zheng/Programs/WeatherData/2008061418/";
 //    addData(gl, filepath);
 //    filepath = "/home/michael/zheng/Programs/WeatherData/2009100800/";
@@ -413,6 +413,7 @@ public class Scene1 extends Scene {
   public void setTargetData(GL2GL3 gl, int index){
     currentData = dataList.get(index);
     currentData.use(gl);
+    System.out.println(currentData.max());
     //updatePoisson(intervalToPoission(currentinterval));
     
     shader.setuniform("weatherTex", currentData.tex.texunit);
@@ -722,9 +723,10 @@ public class Scene1 extends Scene {
   private float cylinderscale() {
     double tan = lights.get(0).posz 
         / (Math.sqrt(Math.pow(lights.get(0).posx, 2) 
-        + Math.pow(lights.get(0).posy, 2)));    
-    return (float) (0.9 * tan 
-        * intervalToPoission(currentinterval) / (currentData.max())) * 10;
+            + Math.pow(lights.get(0).posy, 2)));  
+    return (float) (0.5 * tan 
+        * intervalToPoission(currentinterval));
+//        * intervalToPoission(currentinterval) / (currentData.max())) * 10;
   }
   
   public void setlightdirectionrotate(double rad){
@@ -790,7 +792,6 @@ public class Scene1 extends Scene {
   }
   
   public double test3SetProblem(){
-    //currentData.chooseOneRandomPoint();
     if(shadowRangeList == null){
       System.out.println("Problem set error");
       return 0;
@@ -799,6 +800,15 @@ public class Scene1 extends Scene {
     shadowrange.setValue(shadowRangeList.get(index));
     shadowRangeList.remove(index);
     currentData.chooseOnePointPercentRange(65, 98);
+    return currentData.getDouble(currentData.getChosenPoint());
+  }
+  
+  public double test3CompareSetProblem(){
+    if(shadowRangeList == null){
+      System.out.println("Problem set error");
+      return 0;
+    }
+    currentData.chooseOnePointPercentRange(50, 100);
     return currentData.getDouble(currentData.getChosenPoint());
   }
   
@@ -834,6 +844,22 @@ public class Scene1 extends Scene {
     billBoardShadowFBO(gl, billBoardShader);
     
     board((GL4) gl);
+    
+    if(currentData.isChosen){
+      billBoardAlpha(gl, billBoardShader, whiteArrow,
+          currentData.getChosenPoint(), 45f, 0.7f);
+    }
+    
+    gl.glFlush();
+  }
+  
+  public void test3CompareRendering(GL2GL3 gl, Billboard billBoard){
+    shader.use(gl);
+    updateligths(gl, shader);
+    
+    billBoardShadowFBOClear(gl, billBoardShader);
+    board((GL4) gl);
+    billBoardAll(gl, billBoardShader, billBoard);
     
     if(currentData.isChosen){
       billBoardAlpha(gl, billBoardShader, whiteArrow,
@@ -927,7 +953,7 @@ public class Scene1 extends Scene {
     //移動
     //pos.yに一時的にマイナスをつけてごまかす
     model.glTranslatef((float) (pos.x + viewcenter.x), (float) (-pos.y + viewcenter.y), 0);
-    
+    //value = 1;
     float shadowCylinderScale = 31f/200 * 2;
     cylinderscale = cylinderscale() * value * shadowCylinderScale;
     model.glScalef(cylinderscale, 
@@ -963,17 +989,13 @@ public class Scene1 extends Scene {
     shadowFBO.bind(gl);
     gl.glClearColor(1, 1, 1, 1);
     gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
-    billBoardShadowCore(gl, shader);
+    billBoardShadowAllCore(gl, shader);
     FBO.unbind(gl);
     
     gl.glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
   }
   
-  private void billBoardShadowCore(GL2GL3 gl, Shader shader){
-    if(!softshadow.state) {
-      return;
-    }
-    
+  private void billBoardAll(GL2GL3 gl, Shader shader, Billboard billboard){
     gl.glDisable(GL2.GL_DEPTH_TEST);
     gl.glEnable(GL2.GL_BLEND);
     gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
@@ -982,7 +1004,7 @@ public class Scene1 extends Scene {
     for(int i=0; i < currentData.dist.size(); i++){
       model.glPushMatrix();
       Vector2DDouble pos = currentData.dist.get(i);
-      billBoardCoreRendering(gl, shader, shadow, pos, shadowAngle,
+      billBoardCoreRendering(gl, shader, billboard, pos, shadowAngle,
           (float)currentData.funcWind.getDouble(pos.x, pos.y));
       model.glPopMatrix();
     }
@@ -995,12 +1017,19 @@ public class Scene1 extends Scene {
             currentData.getChosenPoint().x, 
             currentData.getChosenPoint().y);
       }
-      billBoardCoreRendering(gl, shader, shadow, 
+      billBoardCoreRendering(gl, shader, billboard, 
           currentData.getChosenPoint(), shadowAngle, value);
     }
     
     gl.glDisable(GL2.GL_BLEND);
     gl.glEnable(GL2.GL_DEPTH_TEST);
+  }
+  
+  private void billBoardShadowAllCore(GL2GL3 gl, Shader shader){
+    if(!softshadow.state) {
+      return;
+    }
+    billBoardAll(gl, shader, shadow);
   }
   
   private void billBoardCoreRendering(GL2GL3 gl, Shader shader,
@@ -1020,7 +1049,7 @@ public class Scene1 extends Scene {
     model.glScalef(1f/viewscaling, 1f/viewscaling, 1);
     model.glRotatef(rotate, 0, 0, 1);
     shader.updateMatrix(gl, model, Shader.MatrixType.MODEL);
-    billboard.rendering(gl, shader);
+    billboard.renderingWithAlpha(gl, shader);
   }
   
   private void billBoardAlpha(GL2GL3 gl, Shader shader, Billboard billboard,

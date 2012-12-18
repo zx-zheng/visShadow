@@ -19,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
+
+import main.Main;
 
 import util.ColorUtil;
 import za.co.luma.geom.Vector3DDouble;
@@ -56,6 +59,7 @@ public abstract class SceneOrganizer{
   public int CANVAS_HEIGHT;
   
   protected static JButton startTestButton, startDemoButton, endDemoButton;
+  protected static JCheckBox unableToAnswer;
   private static boolean isFirst = true;
   
   static ScheduledExecutorService intervalScheduler;
@@ -80,6 +84,9 @@ public abstract class SceneOrganizer{
       endDemoButton = new JButton("End Demo");
       endDemoButton.setVisible(false);
       Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), endDemoButton);
+      unableToAnswer = new JCheckBox("Unable To Answer");
+      unableToAnswer.setVisible(false);
+      Ctrlpanel.getInstance().addCheckBox(Ctrlpanel.getInstance().getUserTestPane(), unableToAnswer);
       intervalScheduler = Executors.newSingleThreadScheduledExecutor();
       intervalSchedule = new IntervalSchedule();
       isFirst = false;
@@ -132,6 +139,7 @@ public abstract class SceneOrganizer{
     isStart = true;
     startTestButton.setVisible(false);
     startDemoButton.setVisible(false);
+    unableToAnswer.setVisible(true);
     if(isDemo){
       endDemoButton.setVisible(true);
     }else{
@@ -164,7 +172,12 @@ public abstract class SceneOrganizer{
   public void endQuestion(){
     stopMeasureTime();
     numberOfAnsweredQuestion++;
-    answerOutput += elapsedTime + "\n";
+    if(unableToAnswer.isSelected()){
+      answerOutput += "invalid\n";
+    }else{
+      answerOutput += elapsedTime + "\n";
+    }
+    unableToAnswer.setSelected(false);
     isQuestioning = false;
     isAnswered = true;
     intervalSchedule.isInterval = true;
@@ -218,7 +231,11 @@ public abstract class SceneOrganizer{
         + Integer.toString(now.get(Calendar.HOUR_OF_DAY))
         + Integer.toString(now.get(Calendar.MINUTE))
         + ".csv";
-    File file = new File(fileName);
+    File dir = new File("log/" + TEST_NAME);
+    if(!dir.exists()){
+      dir.mkdir();
+    }
+    File file = new File("log/" + TEST_NAME + "/" + fileName);
     try{
       PrintWriter pw = 
           new PrintWriter(new BufferedWriter(new FileWriter(file)));
@@ -265,9 +282,10 @@ public abstract class SceneOrganizer{
     startTestButton.setVisible(true);
     startDemoButton.setVisible(true);
     endDemoButton.setVisible(false);
+    unableToAnswer.setVisible(false);
   }
   
-  public void clickButton(ActionEvent e){
+  public void actionPerformed(ActionEvent e){
     Object src = e.getSource();
     if (src == startTestButton){
       initOutFile();
@@ -280,6 +298,9 @@ public abstract class SceneOrganizer{
     } 
     else if (src == endDemoButton){
       endDemo();
+    }
+    else if (src == unableToAnswer){
+      Main.requestFocus();
     }
   }
   

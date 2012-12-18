@@ -32,6 +32,7 @@ import scene.usertest.Test1;
 import scene.usertest.Test1_2;
 import scene.usertest.Test2;
 import scene.usertest.Test3Color;
+import scene.usertest.Test3Compare;
 import scene.usertest.Test3Shadow;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
@@ -67,6 +68,7 @@ public class SceneRender extends GuiVariables{
   Test2 test2;
   Test3Shadow test3Shadow;
   Test3Color test3Color;
+  Test3Compare test3compare;
   PatternMatchTest pmt;
   PatternMatchTest2 pmt2;
   
@@ -179,6 +181,10 @@ public class SceneRender extends GuiVariables{
 //    test3Color = new Test3Color();
 //    test3Color.init(gl, scene);
 //    currentSO = test3Color;
+    
+//    test3compare = new Test3Compare(8);
+//    test3compare.init(gl, scene);
+//    currentSO = test3compare;
     
 //    pmt = new PatternMatchTest(8);
 //    pmt.init(gl);
@@ -320,8 +326,8 @@ public class SceneRender extends GuiVariables{
     currentSO.mouseMoved(e);
   }
   
-  public void clickButton(ActionEvent e){
-    currentSO.clickButton(e);
+  public void actionPerformed(ActionEvent e){
+    currentSO.actionPerformed(e);
   }
   
   private void screenshot(String path, int width, int height){

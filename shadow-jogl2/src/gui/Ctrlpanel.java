@@ -15,6 +15,7 @@ import java.util.ArrayList;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -154,6 +155,11 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
     button.addActionListener(this);
     panel.add(button);
   }
+  
+  public void addCheckBox(JPanel panel, JCheckBox checkBox){
+    checkBox.addActionListener(this);
+    panel.add(checkBox);
+  }
 
   @Override
   public void stateChanged(ChangeEvent e){
@@ -179,7 +185,7 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
       scene.clickButton(e);
     
     if(sceneRender != null)
-      sceneRender.clickButton(e);
+      sceneRender.actionPerformed(e);
   }
   
 }

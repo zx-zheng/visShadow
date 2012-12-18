@@ -175,8 +175,8 @@ public class PatternMatchTest extends SceneOrganizer{
   }
 
   @Override
-  public void clickButton(ActionEvent e){
-    super.clickButton(e);  
+  public void actionPerformed(ActionEvent e){
+    super.actionPerformed(e);  
   }
 
 }

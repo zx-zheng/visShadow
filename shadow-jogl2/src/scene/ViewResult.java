@@ -93,7 +93,7 @@ public class ViewResult extends SceneOrganizer {
   }
 
   @Override
-  public void clickButton(ActionEvent e){
+  public void actionPerformed(ActionEvent e){
     // TODO Auto-generated method stub
     
   }
