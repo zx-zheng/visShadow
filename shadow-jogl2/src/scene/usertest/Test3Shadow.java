@@ -187,7 +187,7 @@ public class Test3Shadow extends SceneOrganizer{
 
   @Override
   public void iterate(GL2GL3 gl){
-    scene.iterate();
+    scene.iterate(gl);
     scene.test3SetAnswer(sliderValueConvert(answerSlider.getValue()));
     
     if (!isDemo & numberOfAnsweredQuestion == numberOfQuestion) {

@@ -3,7 +3,11 @@ package main;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.DisplayMode;
 import java.awt.FlowLayout;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -42,17 +46,23 @@ import scene.SceneRender;
  */
 public class Main implements
 MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
-  private static final int WINDOW_WIDTH = 1920;
-  private static final int WINDOW_HEIGHT = 1024;
-  private static final int CANVAS_WIDTH = 1600;  // Width of the drawable
-  private static final int CANVAS_HEIGHT = 1200; // Height of the drawable
+  private static final int ratio = 2;
+  private static final int WINDOW_WIDTH = 1920/ratio;
+  private static final int WINDOW_HEIGHT = 1200/ratio;
+  private static final int CANVAS_WIDTH = 1920/ratio;  // Width of the drawable
+  private static final int CANVAS_HEIGHT = 1050/ratio; // Height of the drawable
   private static final int FPS = 30;   // Animator's target frames per second
   SceneRender sr;
   Ctrlpanel ctrlpanel;
   static GLCanvas glcanvas;
+  static JFrame jframe;//  = new JFrame( "One Triangle Swing GLCanvas" ); ;
   
   public static void requestFocus(){
     glcanvas.requestFocus();
+  }
+  
+  public static void setUndecorated(boolean flag){
+    //jframe.setUndecorated(flag);
   }
 
   // Constructor to create profile, caps, drawable, animator, and initialize Frame
@@ -69,7 +79,18 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
 
     final FPSAnimator animator = new FPSAnimator(glcanvas, FPS, true);
 
-    final JFrame jframe = new JFrame( "One Triangle Swing GLCanvas" ); 
+    //jframe = new JFrame( "One Triangle Swing GLCanvas" ); 
+    
+    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    GraphicsDevice      gdev = ge.getDefaultScreenDevice();
+    GraphicsConfiguration gc = gdev.getDefaultConfiguration();
+    jframe = new JFrame("user test", gc);
+    jframe.setForeground(Color.BLACK);
+    jframe.setBackground(Color.BLACK);
+    //jframe.setUndecorated(true);
+    jframe.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    //gdev.setFullScreenWindow(jframe);
+    
     
     
     glcanvas.addGLEventListener( new GLEventListener() {
@@ -117,6 +138,8 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
       }
     });
     
+    
+       
     jframe.getContentPane().setLayout(new FlowLayout());
     JPanel mainPanel = new JPanel();
     mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
@@ -124,8 +147,12 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     mainPanel.add(glcanvas);
     jframe.getContentPane().add(mainPanel);
     
-    jframe.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+//    jframe.setUndecorated(true);
+//    jframe.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+    //jframe.setSize(mode.getWidth(), mode.getHeight());
     jframe.setVisible(true);
+   
+    
     Ctrlpanel.getInstance().initSettingFrame();
     animator.start();
   }
@@ -165,6 +192,9 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
   public void display_(GLAutoDrawable drawable) {
     sr.CANVAS_WIDTH = glcanvas.getWidth();
     sr.CANVAS_HEIGHT = glcanvas.getHeight();
+//    sr.CANVAS_WIDTH = jframe.w
+//    sr.CANVAS_HEIGHT = glcanvas.getHeight();
+
     // Your OpenGL graphic rendering codes for each refresh.
     GL4 gl = drawable.getGL().getGL4();
     //System.out.println("is EDT?"+SwingUtilities.isEventDispatchThread());

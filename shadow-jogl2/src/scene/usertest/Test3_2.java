@@ -13,65 +13,72 @@ import java.util.ArrayList;
 import javax.media.opengl.GL2GL3;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
 
 import com.sun.media.imageioimpl.plugins.jpeg2000.Box;
 
 import scene.SceneOrganizer;
 import scene.obj.Billboard;
 import scene.oldTypeScene.Scene1;
+import scene.usertest.Test1_2.MarkTypeAndAlpha;
 import za.co.luma.geom.Vector2DInt;
 
-public class Test3Compare extends SceneOrganizer{
+public class Test3_2 extends SceneOrganizer{
 
   private final String TEST_VERSION = "1.0.0";
-  private final String TEST_NAME = "CompareTest3";
+  private final String TEST_NAME = "Test3_2";
   //スライダーを大きくする
 //バックグラウンドの明度
-  int L = 70;  
+  int L = 69;  
   Scene1 scene;
   
   int[] viewport1, viewport2;
   
   float[] viewpos1, viewpos2;
   
+  int SLIDER_OFFSET = 13;
+  
   ArrayList<Integer> choiceList;
   
   long intervalTime = 1000;
   
   protected JSlider answerSlider;
+  protected JLabel answerValueLabel;
   
   private double correctAnsValue;
   
   protected JButton answerButton;
   
-  private int numberOfQuestionPerAlpha;
+  private int numberOfQuestionPerMark;
   
-  private Billboard blackHardCircle, whiteHardCircle, 
-  blackCircle, whiteCircle;
+//  private Billboard blackHardCircle, whiteHardCircle, 
+//  blackCircle, whiteCircle;
   
-  private Billboard[] billBoardArray;
+  //private Billboard[] billBoardArray;
   private int numberOfMarkType = 2;
 
 //  billBoardArray[2] = blackHardCircle;
 //  billBoardArray[3] = whiteHardCircle;
 //  billBoardArray[0] = blackCircle;
 //  billBoardArray[1] = whiteCircle;
-  private float billBoardSize = 0.8f;
+  private float billBoardSize = 
+      (float) (Scene1.shadowTexSize * billBoardTexSizeRatio);
   
   private MarkTypeAndAlpha currentTA;
   private ArrayList<MarkTypeAndAlpha> problemList;
   
-  public Test3Compare(){
+  public Test3_2(){
     super();
     this.numberOfQuestion = 20;
   }
   
-  public Test3Compare(int numberOfQuestionPerAlpha){
+  public Test3_2(int numberOfQuestionPerMark){
     super();
     SetTestNameVersion(TEST_NAME, TEST_VERSION);
-    this.numberOfQuestionPerAlpha = numberOfQuestionPerAlpha;
-    this.numberOfQuestion = numberOfQuestionPerAlpha * 8 * numberOfMarkType;
+    this.numberOfQuestionPerMark = numberOfQuestionPerMark;
+    this.numberOfQuestion = numberOfQuestionPerMark * 8 * numberOfMarkType;
   }
   
   public void init(GL2GL3 gl, Scene1 scene){
@@ -79,11 +86,11 @@ public class Test3Compare extends SceneOrganizer{
     this.scene = scene;
     initView();
     initBillBoard(gl);
-    setSceneViewport();
     setGUI();
-    scene.test3genShadowRangeList(numberOfQuestionPerAlpha);
+    setSceneViewport();
+    scene.test3genShadowRangeList(numberOfQuestionPerMark);
     Ctrlpanel.getInstance().getCtrlPanel().setVisible(true);
-    problemList = new ArrayList<Test3Compare.MarkTypeAndAlpha>();
+    problemList = new ArrayList<Test3_2.MarkTypeAndAlpha>();
     newProblemSet();
   }
   
@@ -104,46 +111,62 @@ public class Test3Compare extends SceneOrganizer{
   
   @Override
   protected void initBillBoard(GL2GL3 gl){
-    whiteHardCircle = new Billboard(gl, 
-        "resources/Image/TextureImage/whiteHardCircle.png", billBoardSize);
-    blackHardCircle = new Billboard(gl, 
-        "resources/Image/TextureImage/blackHardCircle.png", billBoardSize);
-    whiteCircle = new Billboard(gl, 
-        "resources/Image/TextureImage/circlewhite.png", billBoardSize);
-    blackCircle = new Billboard(gl, 
-        "resources/Image/TextureImage/circle.png", billBoardSize);
-    billBoardArray = new Billboard[4];
-    
-    billBoardArray[2] = blackHardCircle;
-    billBoardArray[3] = whiteHardCircle;
-    billBoardArray[0] = blackCircle;
-    billBoardArray[1] = whiteCircle;
+    super.initBillBoard(gl);
+//    whiteHardCircle = new Billboard(gl, 
+//        "resources/Image/TextureImage/whiteHardCircle.png", billBoardSize);
+//    blackHardCircle = new Billboard(gl, 
+//        "resources/Image/TextureImage/blackHardCircle2.png", billBoardSize);
+//    whiteCircle = new Billboard(gl, 
+//        "resources/Image/TextureImage/circlewhite.png", billBoardSize);
+//    blackCircle = new Billboard(gl, 
+//        "resources/Image/TextureImage/circle.png", billBoardSize);
+//    billBoardArray = new Billboard[4];
+//    
+//    billBoardArray[2] = blackHardCircle;
+//    billBoardArray[3] = whiteHardCircle;
+//    billBoardArray[0] = blackCircle;
+//    billBoardArray[1] = whiteCircle;
   }
   
   protected void setSceneViewport(){
     viewport1 = new int[4];
     viewport2 = new int[4];
     int offsetx = 10, offsety = 200;
-    int width = Math.min(CANVAS_HEIGHT, CANVAS_WIDTH / 2);
-    viewport1[0] = offsetx;
-    viewport1[1] = offsety;
-    viewport1[2] = width - 2 * offsetx;
-    viewport1[3] = width - 2 * offsetx;
+    int legendWidth = answerSlider.getWidth();
+    int legendHeight = 100;
+    int width = Math.min(CANVAS_HEIGHT, CANVAS_WIDTH) - legendHeight - offsety;
     
-    viewport2[0] = viewport1[0] + viewport1[2] + offsetx;
+    viewport1[0] = (int) ((CANVAS_WIDTH - legendWidth) * 0.5);
+    viewport1[1] = CANVAS_HEIGHT - legendHeight;
+    viewport1[2] = legendWidth;
+    viewport1[3] = legendHeight;
+    
+    
+    viewport2[0] = (int) ((CANVAS_WIDTH - width) * 0.5);
     viewport2[1] = offsety;
     viewport2[2] = width - 2 * offsetx;
     viewport2[3] = width - 2 * offsetx;
   }
   
   protected void setGUI(){
-    answerSlider = new JSlider(0, 200, 200);
-    answerSlider.setPreferredSize(new Dimension(400, 50));
+    answerSlider = new JSlider(0, 100, 100);
+    answerSlider.setPaintLabels(true);
+    answerSlider.setLabelTable(answerSlider.createStandardLabels(20));
+    answerSlider.setPreferredSize(new Dimension(600, 50));
     answerSlider.setVisible(false);
+    answerSlider.setBackground(Color.WHITE);
+    answerSlider.addChangeListener(Ctrlpanel.getInstance());
 //    Ctrlpanel.getInstance().addSlider(
 //        Ctrlpanel.getInstance().getUserTestPane(), answerSlider, "Test3ScaleSlider");
     Ctrlpanel.getInstance().getUserTestPane().add(answerSlider);
-    Ctrlpanel.getInstance().getUserTestPane().add(javax.swing.Box.createRigidArea(new Dimension(50, 10)));
+    answerValueLabel = new JLabel(" Answer : " + Integer.toString(answerSlider.getValue()));
+    answerValueLabel.setPreferredSize(new Dimension(100, 50));
+    answerValueLabel.setVisible(false);
+    Ctrlpanel.getInstance().getUserTestPane().add(answerValueLabel);
+    
+    //すきまを追加
+    //Ctrlpanel.getInstance().getUserTestPane().add(javax.swing.Box.createRigidArea(new Dimension(50, 10)));
+    
     answerButton = new JButton("Answer");
     answerButton.setVisible(false);
     Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), answerButton);
@@ -156,8 +179,15 @@ public class Test3Compare extends SceneOrganizer{
   }
   
   @Override
+  protected void startTest(){
+    Ctrlpanel.getInstance().getUserTestPane().setVisible(true);
+    super.startTest();
+  }
+  
+  @Override
   protected void showAnswerButton(){
     answerSlider.setVisible(true);
+    answerValueLabel.setVisible(true);
     answerButton.setVisible(true);
   }
   
@@ -173,6 +203,7 @@ public class Test3Compare extends SceneOrganizer{
   }
   
   private void newProblem(GL2GL3 gl){
+    System.out.println("Question" + (numberOfAnsweredQuestion+1) + "/" + numberOfQuestion);
     choiceList = scene.resetAndGetChoiceList(gl, 1);
     scene.setTargetData(gl, choiceList.get(0));
     scene.settingTest3();
@@ -183,13 +214,18 @@ public class Test3Compare extends SceneOrganizer{
   }
   
   private void newProblemSet(){
+    numberOfQuestion = 0;
     problemList.clear();
-    for(int i = 0; i < numberOfMarkType; i++){
-      for(int j = 1; j <= 8; j++){
-        for(int k = 0; k < numberOfQuestionPerAlpha; k++){
-          problemList.add(new MarkTypeAndAlpha(i, j * 0.02f + 0.04f));
-        }
-      }
+    for(int i = 0; i < numberOfQuestionPerMark; i++){
+//      problemList.add(new MarkTypeAndAlpha(blackCircle, 0, blackAlpha, "blackCircle"));
+//      problemList.add(new MarkTypeAndAlpha(blackHardCircle, 0, blackAlpha, "blackHardCircle"));
+//      problemList.add(new MarkTypeAndAlpha(shadow, 0, blackAlpha, "shadow"));
+//      problemList.add(new MarkTypeAndAlpha(hardShadow, 0, blackAlpha, "hardshadow"));
+      problemList.add(new MarkTypeAndAlpha(blackCircle, 1, lDown, "blackCircle"));
+      problemList.add(new MarkTypeAndAlpha(blackHardCircle, 1, lDown, "blackHardCircle"));
+      problemList.add(new MarkTypeAndAlpha(shadow, 1, lDown, "shadow"));
+      problemList.add(new MarkTypeAndAlpha(hardShadow, 1, lDown, "hardshadow"));
+      numberOfQuestion += 4;
     }
   }
 
@@ -208,15 +244,31 @@ public class Test3Compare extends SceneOrganizer{
   
   @Override
   protected void showQuestion(GL2GL3 gl){
+    //System.out.println(answerSlider.getLocation());
+    int mergin = 100;
+    int sliderSize = answerSlider.getWidth() - SLIDER_OFFSET * 2;
+    float offsety = 0;
+    if(currentTA.name.contains("shadow")){
+      offsety = 0.7f;
+    }
     
-    gl.glViewport(viewport1[0], viewport1[1], 
+    viewport1[2] = answerSlider.getWidth() + mergin * 2;
+    viewport1[0] = (int) ((CANVAS_WIDTH - viewport1[2]) * 0.5);
+    
+    gl.glViewport(answerSlider.getLocation().x - mergin, viewport1[1], 
         viewport1[2], viewport1[3]);
+    
     scene.setShadowTexCoordSize(viewport1[2], viewport1[3]);
-    scene.lookat(viewpos1[0], viewpos1[1], viewpos1[2],
+    scene.lookat(viewpos2[0], viewpos2[1], viewpos2[2],
         0, 0, 0, 0, 1, 0);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
-    scene.test3ShadowRendering1(gl);
+    scene.renderingLegend(gl, currentTA.billBoard, 
+        (float) (viewport2[2] / (double) viewport1[2]),
+        (float) (viewport1[2] / (double) viewport1[3]),
+        (float) ((double) sliderSize / viewport1[2]), 
+        (float) ((double)(mergin + SLIDER_OFFSET) / (double) (viewport1[2])), offsety,
+        2);
     
     
     gl.glViewport(viewport2[0], viewport2[1], 
@@ -226,8 +278,12 @@ public class Test3Compare extends SceneOrganizer{
         0, 0, 0, 0, 1, 0);
     scene.updatePVMatrix(gl);
     scene.updatePVMatrixtess(gl);
-    billBoardArray[currentTA.type].setAlpha(currentTA.alpha);
-    //scene.test3CompareRendering(gl, billBoardArray[currentTA.type], 0);
+    if(currentTA.billBoard != null){
+      currentTA.billBoard.setAlpha(currentTA.alpha);
+    } else {
+      scene.shadowrange.setValue((int) currentTA.alpha);
+    }
+    scene.test3_2Rendering(gl, currentTA);
   }
 
   @Override
@@ -259,14 +315,22 @@ public class Test3Compare extends SceneOrganizer{
         + "poissonInterval = " + Integer.toString(scene.possioninterval.getValue()) + "\n"
         + "viewScale = " + Integer.toString(scene.viewScale.getValue()) + "\n"
 //        +"marktype, error, alpha, correct, posx, posy, temperature, time\n";
-        +"marktype, error, alpha, correct, time\n";
+        +"模様の種類, マークの表示法 0:alpha 1:L, 誤差, alpha, 正解値, 解答時間\n";
   }
   
   private void answer(){
     if(!answerCheck()) return;
     double error = 
         sliderValueConvert(answerSlider.getValue()) - correctAnsValue;
-    answerOutput +=  Integer.toString(currentTA.type) 
+    
+    if(Math.abs(error) < 0.08){
+      correct();
+    } else {
+      wrong();
+    }
+    answerOutput +=  currentTA.name
+        + ", "
+        + Integer.toString(currentTA.combineType)
         + ", "
         + Double.toString(error) 
         + ", " 
@@ -291,6 +355,7 @@ public class Test3Compare extends SceneOrganizer{
   @Override
   protected void resetTest(){
     super.resetTest();
+    Ctrlpanel.getInstance().getUserTestPane().setVisible(false);
     answerSlider.setValue(answerSlider.getMaximum());
     newProblemSet();
   }
@@ -330,6 +395,11 @@ public class Test3Compare extends SceneOrganizer{
     // TODO Auto-generated method stub
 
   }
+  
+  @Override
+  public void stateChanged(ChangeEvent e) {
+    answerValueLabel.setText(" Answer : " + Integer.toString(answerSlider.getValue()));
+  }
 
   @Override
   public void actionPerformed(ActionEvent e){
@@ -340,13 +410,18 @@ public class Test3Compare extends SceneOrganizer{
     }
   }
   
-  class MarkTypeAndAlpha{
+  public class MarkTypeAndAlpha{
     public float alpha;
-    public int type;
+    //public int type;
+    public Billboard billBoard;
+    public int combineType;
+    public String name;
     
-    public MarkTypeAndAlpha(int type, float alpha){
-      this.type = type;
+    public MarkTypeAndAlpha(Billboard billBoard, int combineType, float alpha, String name){
+      this.billBoard = billBoard;
+      this.combineType = combineType;
       this.alpha = alpha;
+      this.name = name;
     }
   }
 

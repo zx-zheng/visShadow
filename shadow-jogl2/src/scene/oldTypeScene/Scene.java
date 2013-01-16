@@ -513,8 +513,8 @@ public abstract class Scene implements RenderingPass {
   
   public abstract void scenetess(GL3 gl, Shader shader, boolean show);
 
-  public abstract void iterate();
+  public abstract void iterate(GL2GL3 gl);
   
-  public void clickButton(ActionEvent e){}
+  public void actionPerformed(ActionEvent e){}
 
 }

@@ -57,7 +57,7 @@ public class Test2 extends SceneOrganizer{
 
   @Override
   public void iterate(GL2GL3 gl){
-    scene.iterate();
+    scene.iterate(gl);
     if(!SHOW_QUESTION){
       PROGRESS_FRAME++;
       if(PROGRESS_FRAME > 30){

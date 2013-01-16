@@ -19,7 +19,7 @@ public class PatternMatchTest extends SceneOrganizer{
   private final String TEST_NAME = "PatternMatch2";
   
   //バックグラウンドの明度
-  int L = 70;
+  int L = 69;
   long intervalTime = 1000;
   ColorMosaic colorMosaic; 
   int mosaicGridSize = 15;

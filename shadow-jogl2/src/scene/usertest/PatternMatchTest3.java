@@ -16,48 +16,45 @@ import za.co.luma.geom.Vector3DDouble;
 
 import main.Main;
 
-public class PatternMatchTest2 extends PatternMatchTest{
+public class PatternMatchTest3 extends PatternMatchTest{
   
   private final String TEST_VERSION = "1.0.0";
-  private final String TEST_NAME = "PatternMatch2";
+  private final String TEST_NAME = "PatternMatch3";
 
   final int typeOfQuestion = 5;
   /*
    * 0:同じ
    * 1:同じ模様あり
-   * 2:色相1ます違い
-   * 3:色相違い1ます同じ色のマスに模様あり
-   * 4:色相違い1ます違う色のマスに模様あり
    * 5:模様による変化と同じ色の変化模様表示なし
    * 6:真の色(模様による変化と同じ変化がかかっている)と(地の色＋模様)が同じ色
    */
   int typeOfMark = 2 + 1;
-  Billboard whiteCircle, blackCircle;
+  Billboard blackCircle;
   float billBoardSize = (float) (Math.sqrt(2) / 3 * 1.3);
-  Vector3DDouble white = new Vector3DDouble(1, 1, 1);
+  
   Vector3DDouble black = new Vector3DDouble(0, 0, 0);
   Vector3DDouble[] markArray;
   
   float[] blackAlphaArray = {0.14f, 0.16f, 0.18f, 0.2f};
-  float[] whiteAlphaArray = {0.16f, 0.18f, 0.20f, 0.22f};
+  
   int[] shadowRangeArray = {10, 10, 14, 14};
   
   int numberOfQuestionPerType;
-  Problem currentProblem;
-  int mosaicGridSize = 3;
+  ProblemSet currentProblem;
+  int mosaicGridSize = 1;
   
   //今回はfalse
   boolean isShadowed = false;
   int mosaicViewportSize = 150;
   int mosaicInterval = 300;
-  long mosaicShowTime = 1500 * 1;
+  long mosaicShowTime = 300 * 1;
   
-  ArrayList<Problem> problemList;
+  ArrayList<ProblemSet> problemList;
   ScheduledExecutorService scheduler;
   ScheduledFuture scheduledFuture;
   HideSchedule hideSchedule = new HideSchedule();
   
-  public PatternMatchTest2(int numberOfQuestionPerType){
+  public PatternMatchTest3(int numberOfQuestionPerType){
     super();
     SetTestNameVersion(TEST_NAME, TEST_VERSION);
     this.numberOfQuestionPerType = numberOfQuestionPerType;
@@ -70,17 +67,14 @@ public class PatternMatchTest2 extends PatternMatchTest{
     initMark(gl);
     colorMosaic.initForPmt2(gl);
     scheduler = Executors.newSingleThreadScheduledExecutor();
-    problemList = new ArrayList<Problem>();
+    problemList = new ArrayList<ProblemSet>();
   }
   
   public void initMark(GL2GL3 gl){
     markArray = new Vector3DDouble[typeOfMark];
-    markArray[0] = white;
+  
     markArray[1] = black;
-    whiteCircle = new Billboard(gl, 
-        "resources/Image/TextureImage/circlewhite.png", billBoardSize);
-    whiteCircle.setAlpha(0.2f);
-    blackCircle = new Billboard(gl, 
+        blackCircle = new Billboard(gl, 
         "resources/Image/TextureImage/circle.png", billBoardSize);
     blackCircle.setAlpha(0.2f);
   }
@@ -125,24 +119,10 @@ public class PatternMatchTest2 extends PatternMatchTest{
     problemList.clear();
     numberOfQuestion = 0;
     for(int i = 0; i < numberOfQuestionPerType; i++){
-      problemList.add(new Problem(0, -1, null, null, 0));
-      problemList.add(new Problem(2, -1, null, null, 0));
-      numberOfQuestion += 2;
-    }
-    
-    for(int j = 0; j < numberOfQuestionPerType; j++){
-      for(int k = 0; k < blackAlphaArray.length; k++){
-        problemList.add(new Problem(1, 1, blackCircle, black, blackAlphaArray[k]));
-        problemList.add(new Problem(1, 2, whiteCircle, white, whiteAlphaArray[k]));
-        problemList.add(new Problem(1, 0, null, null, shadowRangeArray[k]));
-        problemList.add(new Problem(3, 1, blackCircle, black, blackAlphaArray[k]));
-        problemList.add(new Problem(3, 2, whiteCircle, white, whiteAlphaArray[k]));
-        problemList.add(new Problem(3, 0, null, null, shadowRangeArray[k]));
-        problemList.add(new Problem(4, 1, blackCircle, black, blackAlphaArray[k]));
-        problemList.add(new Problem(4, 2, whiteCircle, white, whiteAlphaArray[k]));
-        problemList.add(new Problem(4, 0, null, null, shadowRangeArray[k]));
-        numberOfQuestion += 9;
-      }
+      Vector3DDouble color = new Vector3DDouble(L, 100 * Math.random(), 4);
+      Vector3DDouble secondColor = new Vector3DDouble(color.x, color.y - 5, color.z);
+      problemList.add(new ProblemSet(0, TEST_NAME, blackCircle, color, secondColor, false));
+      numberOfQuestion++;
     }
 
   }
@@ -157,11 +137,11 @@ public class PatternMatchTest2 extends PatternMatchTest{
     
     gl.glViewport(viewport1[0], viewport1[1], viewport1[2], viewport1[3]);
     colorMosaic.setShadowTexCoordSize(viewport1[2], viewport1[3]);
-    colorMosaic.pmt2Rendering1(gl, currentProblem);
+    colorMosaic.pmt3Rendering1(gl, currentProblem);
     
     gl.glViewport(viewport2[0], viewport2[1], viewport2[2], viewport2[3]);
     colorMosaic.setShadowTexCoordSize(viewport2[2], viewport2[3]);
-    colorMosaic.pmt2Rendering2(gl, currentProblem);
+    colorMosaic.pmt3Rendering2(gl, currentProblem);
   }
   
   @Override
@@ -169,16 +149,9 @@ public class PatternMatchTest2 extends PatternMatchTest{
     System.out.println("Question" + (numberOfAnsweredQuestion+1) + "/" + numberOfQuestion);
     int index = (int) (Math.random() * problemList.size());
     currentProblem = problemList.get(index);
-    if(currentProblem.billBoard != null){
-      currentProblem.billBoard.setAlpha(currentProblem.alphaOfBillBoard);
-      System.out.println(currentProblem.alphaOfBillBoard);
-    }
-    answerOutput += Integer.toString(currentProblem.problemType) + ", "
-        + Integer.toString(currentProblem.markType) + ", "
-        + Float.toString(currentProblem.alphaOfBillBoard) + ", ";
+    answerOutput += 
+         currentProblem.markType + ", ";
     problemList.remove(index);
-    colorMosaic.genColorMosaic(mosaicGridSize, isShadowed);
-    colorMosaic.genComparisonColorMosaic(currentProblem.problemType);
     hideSchedule.show = true;
     //非表示のスケジュール
     scheduledFuture = scheduler.schedule(hideSchedule, mosaicShowTime, TimeUnit.MILLISECONDS);
@@ -188,15 +161,14 @@ public class PatternMatchTest2 extends PatternMatchTest{
     
     switch(e.getKeyCode()){
     case KeyEvent.VK_LEFT:
-      if(currentProblem.problemType == 0 || currentProblem.problemType == 1){
+      if(currentProblem.isSame){
         correct();
       }else{
         wrong();
       }
       return true;
     case KeyEvent.VK_RIGHT:
-      if(currentProblem.problemType == 2 || currentProblem.problemType == 3
-          || currentProblem.problemType == 4){
+      if(!currentProblem.isSame){
         correct();
       }else{
         wrong();
@@ -223,20 +195,21 @@ public class PatternMatchTest2 extends PatternMatchTest{
 
   }
   
-  class Problem{
-    int problemType;
-    int markType;
+  class ProblemSet{
+    String markType;
     Billboard billBoard;
-    Vector3DDouble color;
+    Vector3DDouble color, secondColor;
     float alphaOfBillBoard;
+    boolean isSame;
     
-    public Problem(int problemType, int markType,
-        Billboard billBoard, Vector3DDouble color, float alpha){
-      this.problemType = problemType;
+    public ProblemSet(int problemType, String markType,
+        Billboard billBoard, Vector3DDouble color, Vector3DDouble secondColor, 
+        boolean isSame){
       this.markType = markType;
       this.billBoard = billBoard;
       this.color = color;
-      this.alphaOfBillBoard  = alpha;
+      this.secondColor = secondColor;
+      this.isSame = isSame;
     }
   }
   

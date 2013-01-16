@@ -20,10 +20,14 @@ import javax.media.opengl.GL2;
 import javax.media.opengl.GL2GL3;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.event.ChangeEvent;
 
 import main.Main;
 
+import scene.obj.Billboard;
+import scene.oldTypeScene.Scene1;
 import util.ColorUtil;
+import za.co.luma.geom.Vector2DDouble;
 import za.co.luma.geom.Vector3DDouble;
 
 
@@ -61,6 +65,17 @@ public abstract class SceneOrganizer{
   protected static JButton startTestButton, startDemoButton, endDemoButton;
   protected static JCheckBox unableToAnswer;
   private static boolean isFirst = true;
+  private static boolean isBillBoardInit = false;
+  
+  protected static double billBoardTexSizeRatio = 0.5 * 1.25;
+  protected static double shadowTexSize = 1.5;
+  protected static float billBoardSize = 
+      (float) (shadowTexSize * billBoardTexSizeRatio);
+  
+  protected static Billboard blackHardCircle, blackCircle,
+  shadow, hardShadow;
+  protected static float blackAlpha = 0.18f;
+  protected static float lDown = 10;
   
   static ScheduledExecutorService intervalScheduler;
   static IntervalSchedule intervalSchedule;
@@ -78,12 +93,12 @@ public abstract class SceneOrganizer{
   public SceneOrganizer(){
     if(isFirst){
       startTestButton = new JButton("Start Test");
-      Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), startTestButton);
+      Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getCtrlPanel(), startTestButton);
       startDemoButton = new JButton("Start Demo");
-      Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), startDemoButton);
-      endDemoButton = new JButton("End Demo");
+      Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getCtrlPanel(), startDemoButton);
+      endDemoButton = new JButton("End");
       endDemoButton.setVisible(false);
-      Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getUserTestPane(), endDemoButton);
+      Ctrlpanel.getInstance().addButton(Ctrlpanel.getInstance().getCtrlPanel(), endDemoButton);
       unableToAnswer = new JCheckBox("Unable To Answer");
       unableToAnswer.setVisible(false);
       Ctrlpanel.getInstance().addCheckBox(Ctrlpanel.getInstance().getUserTestPane(), unableToAnswer);
@@ -91,6 +106,29 @@ public abstract class SceneOrganizer{
       intervalSchedule = new IntervalSchedule();
       isFirst = false;
     }
+  }
+  
+  protected void initBillBoard(GL2GL3 gl){
+    if(isBillBoardInit) return;
+    
+    double centeryPixel = 22, widthPixel = 200;
+    double centery = (shadowTexSize / 2) - (centeryPixel / widthPixel) * shadowTexSize;
+    System.out.println(centery);
+    shadow = new Billboard(gl, "resources/Image/TextureImage/shadow10.png",
+        new Vector2DDouble(0, centery), shadowTexSize);
+    shadow.setAlpha(blackAlpha);
+    
+    hardShadow = new Billboard(gl, "resources/Image/TextureImage/hardshadow4.png",
+        new Vector2DDouble(0, centery), shadowTexSize);
+    hardShadow.setAlpha(blackAlpha);
+    
+    blackCircle = new Billboard(gl, 
+        "resources/Image/TextureImage/circle3.png", billBoardSize);
+    blackCircle.setAlpha(blackAlpha);
+    
+    blackHardCircle = new Billboard(gl, 
+        "resources/Image/TextureImage/blackHardCircle2.png", billBoardSize);
+    blackHardCircle.setAlpha(blackAlpha);
   }
   
   protected void initClearColor(int L){
@@ -139,11 +177,13 @@ public abstract class SceneOrganizer{
     isStart = true;
     startTestButton.setVisible(false);
     startDemoButton.setVisible(false);
-    unableToAnswer.setVisible(true);
+    Main.setUndecorated(true);
+    //unableToAnswer.setVisible(true);
     if(isDemo){
       endDemoButton.setVisible(true);
     }else{
-      endDemoButton.setVisible(false);
+      endDemoButton.setVisible(true);
+      //Ctrlpanel.getInstance().getUserTestPane().setVisible(false);
     }
     //Ctrlpanel.getInstance().getCtrlPanel().setVisible(true);
     showAnswerButton();
@@ -171,6 +211,7 @@ public abstract class SceneOrganizer{
   
   public void endQuestion(){
     stopMeasureTime();
+    isQuestioning = false;
     numberOfAnsweredQuestion++;
     if(unableToAnswer.isSelected()){
       answerOutput += "invalid\n";
@@ -178,7 +219,6 @@ public abstract class SceneOrganizer{
       answerOutput += elapsedTime + "\n";
     }
     unableToAnswer.setSelected(false);
-    isQuestioning = false;
     isAnswered = true;
     intervalSchedule.isInterval = true;
     scheduledFuture = 
@@ -225,10 +265,10 @@ public abstract class SceneOrganizer{
     Calendar now = Calendar.getInstance();
     String fileName =
         TEST_NAME
-        + Integer.toString(now.get(Calendar.YEAR))
-        + Integer.toString(now.get(Calendar.MONTH) + 1)
-        + Integer.toString(now.get(Calendar.DATE))
-        + Integer.toString(now.get(Calendar.HOUR_OF_DAY))
+        + Integer.toString(now.get(Calendar.YEAR)) + "-"
+        + Integer.toString(now.get(Calendar.MONTH) + 1) + "-"
+        + Integer.toString(now.get(Calendar.DATE)) + "-"
+        + Integer.toString(now.get(Calendar.HOUR_OF_DAY)) + "-"
         + Integer.toString(now.get(Calendar.MINUTE))
         + ".csv";
     File dir = new File("log/" + TEST_NAME);
@@ -241,6 +281,7 @@ public abstract class SceneOrganizer{
           new PrintWriter(new BufferedWriter(new FileWriter(file)));
       pw.write(answers);
       pw.close();
+      System.out.println(fileName + " saved");
     }catch(IOException e){
       e.printStackTrace();
     }  
@@ -254,8 +295,8 @@ public abstract class SceneOrganizer{
     resetTest();
   }
   
-  public void endDemo(){
-    System.out.println("End Demo");
+  public void end(){
+    System.out.println("End");
     resetTest();
   }
   
@@ -283,6 +324,8 @@ public abstract class SceneOrganizer{
     startDemoButton.setVisible(true);
     endDemoButton.setVisible(false);
     unableToAnswer.setVisible(false);
+    Main.setUndecorated(false);
+    Ctrlpanel.getInstance().getUserTestPane().setVisible(true);
   }
   
   public void actionPerformed(ActionEvent e){
@@ -297,13 +340,16 @@ public abstract class SceneOrganizer{
       startTest();
     } 
     else if (src == endDemoButton){
-      endDemo();
+      end();
     }
     else if (src == unableToAnswer){
       Main.requestFocus();
     }
   }
   
+  public void stateChanged(ChangeEvent e) {
+    
+  }
   
   class IntervalSchedule implements Runnable{
 

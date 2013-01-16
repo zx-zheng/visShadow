@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import scene.SceneOrganizer;
 import scene.SceneRender;
 import scene.oldTypeScene.Scene;
 
@@ -37,6 +38,8 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   public static Ctrlpanel getInstance(){
     return Ctrlpanel.instance;
   }
+  
+  public static SceneOrganizer currentSO;
   
   static JFrame settingFrame;// = new JFrame("Settings");
   JPanel ctrlPanel = new JPanel();
@@ -102,7 +105,14 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   
   public void adduniformslider(int min, int max, int value, String text, String name,Shader shader){
     UniformJSlider slider= new UniformJSlider(min, max, value, name, shader);
-    addJSlider(text, slider);
+    slider.addLabel(text);
+    addJSlider(slider.label, slider);
+  }
+  
+  public void addJSlider(JLabel label, JSlider slider){
+    ctrlPanel.add(label);
+    slider.addChangeListener(this);
+    ctrlPanel.add(slider);
   }
   
   public void addJSlider(String text, JSlider slider){
@@ -160,12 +170,19 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
     checkBox.addActionListener(this);
     panel.add(checkBox);
   }
+  
+  public void addComponent(JComponent comp){
+    ctrlPanel.add(comp);
+  }
 
   @Override
   public void stateChanged(ChangeEvent e){
     Object source = e.getSource();
     if(source.getClass() == new UniformJSlider().getClass()){
       ((UniformJSlider)source).slide(e);
+    }
+    if(currentSO != null){
+      currentSO.stateChanged(e);
     }
   }
 
@@ -182,10 +199,10 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   @Override
   public void actionPerformed(ActionEvent e){
     if(scene != null)
-      scene.clickButton(e);
+      scene.actionPerformed(e);
     
     if(sceneRender != null)
       sceneRender.actionPerformed(e);
   }
-  
+
 }

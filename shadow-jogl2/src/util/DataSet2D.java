@@ -53,11 +53,12 @@ public class DataSet2D{
   
   private void initDataTex(GL2GL3 gl, String filepath){
 
-    Load2Dfloat loader = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt",
-        filepath + "Temperature_2.0m_T0.txt",
-        filepath + "UofWind_10.0m_T0.txt",
-        filepath + "VofWind_10.0m_T0.txt");
-    loader.loadOffsetLine(0);
+//    Load2Dfloat loader = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt",
+//        filepath + "Temperature_2.0m_T0.txt",
+//        filepath + "UofWind_10.0m_T0.txt",
+//        filepath + "VofWind_10.0m_T0.txt");
+//    loader.loadOffsetLine(0);
+//    loader.normalize(1);
 
     int div = 1;
     Load2Dfloat l0 = new Load2Dfloat(filepath + "RelativeHumidity_2.0m_T0.txt");
@@ -65,6 +66,7 @@ public class DataSet2D{
     Spline spl0 = new Spline(l0.getbuffer(), l0.width, l0.height, div);
     Load2Dfloat l1 = new Load2Dfloat(filepath + "Temperature_2.0m_T0.txt");
     l1.loadOffsetLine(0);
+    l1.normalizeTemp();
     Spline spl1 = new Spline(l1.getbuffer(), l1.width, l1.height, div);
     Load2Dfloat l2 = new Load2Dfloat(filepath + "UofWind_10.0m_T0.txt");
     l2.loadOffsetLine(0);
@@ -118,14 +120,14 @@ public class DataSet2D{
     funcWindP = 
         new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0.2, 1);
     funcWind = 
-        new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0, 1);
+        new RealFunction2DWrapper(windspeed, 0, windspeed.max(), 0.0, 1);
     MAX = windspeed.max();
     funcHumidP = 
         new RealFunction2DWrapper(humidity, 0, humidity.max(), 0.2, 1);
     funcHumid = 
-        new RealFunction2DWrapper(humidity, 0, humidity.max(), 0, 1);
+        new RealFunction2DWrapper(humidity, 0, humidity.max(), 0.0, 1);
     funcTemp = 
-        new RealFunction2DWrapper(temperature, 0, temperature.max(), 0, 1);
+        new RealFunction2DWrapper(temperature, 0, temperature.max(), 0.0, 1);
   }
   
   public double getDouble(double x, double y){

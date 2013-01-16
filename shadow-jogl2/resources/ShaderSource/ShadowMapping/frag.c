@@ -48,7 +48,7 @@ vec2 possion32[32] =
 vec3 LabtoXYZ(float l,float a,float b){
   float xn = 0.9505;
   float yn = 1.0;
-  float zn = 1.089;
+  float zn = 1.0888;
   float p = (l+16.0)/116.0;
   float x = xn * pow(p+a/500.0,3.0);
   float y = yn * pow(p,3.0);
@@ -57,9 +57,9 @@ vec3 LabtoXYZ(float l,float a,float b){
 }
 
 vec3 XYZtoRGB(vec3 xyz){
-  mat3 xyz2rgb = mat3(3.240479, -0.969256, 0.055648,
-		      -1.53715, 1.875991, -0.204043,
-		      -0.498535, 0.041556, 1.057311);
+  mat3 xyz2rgb = mat3(3.2406, -0.9689, 0.0557,
+		      -1.5372, 1.8758, -0.2040,
+		      -0.4986, 0.0415, 1.0570);
   return xyz2rgb * xyz;
 }
 
@@ -264,6 +264,7 @@ void main(){
 		 (1-(Geom.texcoord0 + Geom.Area)/divide).y)).xy;///10;
   float temperature = th.y;
   float humid = th.x/100;
+  //temperature = 0;
   ///*
   if(colorset==1){
     Color=vec4(1,1,0,1);
@@ -271,7 +272,7 @@ void main(){
     return;
   }
   //*/
-  temperature = (temperature - 273)/25.0;
+  //temperature = (temperature - 273)/25.0;
   //vec3 color = valuetocolorYB(temperature).xyz;
 
   //float ratio = 0.5;
@@ -306,8 +307,16 @@ void main(){
     }
   }
 
- 
+  /*
+  if(visualizedcolor.x > 1 || visualizedcolor.y > 1){
+    visualizedcolor = vec4(0);
+  }
+  */
   Color = visualizedcolor;
+  //Color = vec4(temperature);
+
+  //Color = vec4(255/255 , 0/255, 0/255,1);
+  //Color = vec4(shadewide);
   //Color = vec4(shadow);
   
   //Color = texture(shadowTex, shadowTexCoord);

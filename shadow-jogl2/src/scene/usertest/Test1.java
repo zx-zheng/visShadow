@@ -204,7 +204,7 @@ public class Test1 extends SceneOrganizer{
 
   @Override
   public void iterate(GL2GL3 gl){
-    scene.iterate();
+    scene.iterate(gl);
     
     if(newProblem){
       newProblem(gl);

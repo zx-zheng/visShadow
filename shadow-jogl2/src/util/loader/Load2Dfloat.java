@@ -6,6 +6,8 @@ public class Load2Dfloat extends Loader{
 
   public int width, height;
   
+  final static float TEMP_MAX = 313, TEMP_MIN = 235;
+  
   public Load2Dfloat(String filepath){
     super(filepath);
     scanner[0].useDelimiter(",\\s+|\\s+|E\\+|#\\s");
@@ -42,6 +44,49 @@ public class Load2Dfloat extends Loader{
         buffer.putFloat(scanner[i].nextFloat() - valueoffset);
         scanner[i].nextLine();
       }
+    }
+  }
+  
+  public void normalize(int index){
+    float max = Float.MIN_VALUE, min = Float.MAX_VALUE;
+    for(int i= 0; i < width * height; i++){
+      
+      float value = buffer.getFloat(4 * i * file.length + (4 * index));
+      if(value > max){
+        max = value;
+      }
+      if(value < min){
+        min = value;
+      }
+    }
+    
+    //System.out.println(max + " " + min);
+    
+    double a = 1 / (max - min);
+    double b = -min / (max - min);
+    for(int i= 0; i<buffer.capacity() / file.length / 4; i++){
+      int index2 = 4 * i * file.length + (4 * index);
+      float value = buffer.getFloat(index2);
+      value = (float) (a * value + b);
+      buffer.putFloat(index2, value);
+      
+    }
+  }
+  
+  public void normalizeTemp(){
+    float max = TEMP_MAX; 
+    float min = TEMP_MIN;
+ 
+    int index = 0;
+    
+    double a = 1 / (max - min);
+    double b = -min / (max - min);
+    for(int i= 0; i<buffer.capacity() / file.length / 4; i++){
+      int index2 = 4 * i * file.length + (4 * index);
+      float value = buffer.getFloat(index2);
+      value = (float) (a * value + b);
+      buffer.putFloat(index2, value);
+      
     }
   }
 

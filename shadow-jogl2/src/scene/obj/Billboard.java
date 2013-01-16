@@ -21,9 +21,10 @@ public class Billboard extends Obj implements Semantic{
   
   public static final String TEX_UNIFORM_NAME = "billBoardTex";
   static final String UNIFORM_ALPHA = "alpha";
-  private float alpha = 1;
+  public float alpha = 1;
   protected int[] vao = new int[1];
   private int[] arraybuffer = new int[1];
+  public double width;
   TexBindSet tbs;
 
   public Billboard(TextureBase tex){
@@ -71,6 +72,7 @@ public class Billboard extends Obj implements Semantic{
   
   private void initFrame(GL2GL3 gl, Vector2DDouble center, 
       double width, double height){
+    this.width = width;
     gl.glGenBuffers(1, arraybuffer, 0);
     gl.glGenVertexArrays(1, vao, 0);
     float[] frame = {

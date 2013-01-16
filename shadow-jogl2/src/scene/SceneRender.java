@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 import javax.media.opengl.*;
+import javax.sql.rowset.serial.SerialArray;
 
 import com.jogamp.newt.event.InputEvent;
 import com.jogamp.opengl.util.awt.Screenshot;
@@ -28,12 +29,15 @@ import scene.templateScene.TexViewer;
 import scene.usertest.ColorMosaic;
 import scene.usertest.PatternMatchTest;
 import scene.usertest.PatternMatchTest2;
+import scene.usertest.PatternMatchTest3;
+import scene.usertest.SearchColor;
 import scene.usertest.Test1;
 import scene.usertest.Test1_2;
 import scene.usertest.Test2;
 import scene.usertest.Test3Color;
 import scene.usertest.Test3Compare;
 import scene.usertest.Test3Shadow;
+import scene.usertest.Test3_2;
 import util.loader.Load2Dfloat;
 import util.loader.Spline;
 
@@ -69,8 +73,11 @@ public class SceneRender extends GuiVariables{
   Test3Shadow test3Shadow;
   Test3Color test3Color;
   Test3Compare test3compare;
+  Test3_2 test3_2;
   PatternMatchTest pmt;
   PatternMatchTest2 pmt2;
+  PatternMatchTest3 pmt3;
+  SearchColor sc;
   
   public void init(GL2GL3 gl){
     timer.init(gl);
@@ -156,6 +163,7 @@ public class SceneRender extends GuiVariables{
     fbo.attachDepthRBO(gl, 1024, 1024);
     //*/
     initSceneOrganizer(gl);
+    Ctrlpanel.currentSO = currentSO;
   }
   
   private void initSceneOrganizer(GL2GL3 gl){
@@ -167,7 +175,7 @@ public class SceneRender extends GuiVariables{
 //    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
 //    currentSO = test1;
     
-//    test1_2 = new Test1_2(5);
+//    test1_2 = new Test1_2(15);
 //    test1_2.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
 //    currentSO = test1_2;
     
@@ -186,18 +194,29 @@ public class SceneRender extends GuiVariables{
 //    test3compare.init(gl, scene);
 //    currentSO = test3compare;
     
+//    test3_2 = new Test3_2(20);
+//    test3_2.init(gl, scene);
+//    currentSO = test3_2;
+    
 //    pmt = new PatternMatchTest(8);
 //    pmt.init(gl);
 //    currentSO = pmt;
     
-    pmt2 = new PatternMatchTest2(1);
-    pmt2.init(gl);
-    currentSO = pmt2;
+//    pmt2 = new PatternMatchTest2(4);
+//    pmt2.init(gl);
+//    currentSO = pmt2;
+    
+//    pmt3 = new PatternMatchTest3(4);
+//    pmt3.init(gl);
+//    currentSO = pmt3;
+    
+    sc = new SearchColor(10);
+    sc.init(gl);
+    currentSO = sc;
   }
   
   public void rendering(GL2GL3 gl){
-    updateCanvasSize(gl);test3Shadow = new Test3Shadow(10);
-//  
+    updateCanvasSize(gl);
     currentSO.rendering(gl);
     currentSO.iterate(gl);
     if(switched){
