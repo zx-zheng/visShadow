@@ -50,7 +50,7 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   
   public Ctrlpanel(){
     ctrlPanel.setLayout(new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS));
-    ctrlPanel.setVisible(true);
+    //ctrlPanel.setVisible(false);
    
     userTestPanel.setLayout(new FlowLayout());
   }
@@ -71,7 +71,12 @@ public class Ctrlpanel implements ChangeListener, ItemListener, ActionListener{
   }
   
   public void showCtrlPanel(){
-    ctrlPanel.setVisible(true);
+    SwingUtilities.invokeLater(new Runnable(){
+      @Override
+      public void run(){
+        ctrlPanel.setVisible(true);
+      }});    
+    settingFrame.validate();
   }
   
   public void hideCtrlPanel(){

@@ -16,6 +16,8 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 
 import gl.*;
 import gui.Ctrlpanel;
@@ -38,6 +40,7 @@ import javax.media.opengl.awt.GLCanvas;
 import javax.media.opengl.awt.GLJPanel;
 
 import com.jogamp.opengl.util.FPSAnimator;
+import com.jogamp.opengl.util.awt.Screenshot;
 
 import scene.SceneRender;
 
@@ -46,11 +49,11 @@ import scene.SceneRender;
  */
 public class Main implements
 MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
-  private static final int ratio = 2;
+  private static final int ratio = 1;
   private static final int WINDOW_WIDTH = 1920/ratio;
   private static final int WINDOW_HEIGHT = 1200/ratio;
   private static final int CANVAS_WIDTH = 1920/ratio;  // Width of the drawable
-  private static final int CANVAS_HEIGHT = 1050/ratio; // Height of the drawable
+  private static final int CANVAS_HEIGHT = 1100/ratio; // Height of the drawable
   private static final int FPS = 30;   // Animator's target frames per second
   SceneRender sr;
   Ctrlpanel ctrlpanel;
@@ -71,11 +74,14 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     GLProfile glp = GLProfile.get(GLProfile.GL4bc);
     // Specifies a set of OpenGL capabilities, based on your profile.
     GLCapabilities caps = new GLCapabilities(glp);
-    caps.setSampleBuffers(true);
+    
+    //アンチエイリアス
+    //caps.setSampleBuffers(true);
     caps.setNumSamples(8); // enable anti aliasing - just as a example
     // Allocate a GLDrawable, based on your OpenGL capabilities.
     glcanvas = new GLCanvas(caps);
     glcanvas.setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
+    
 
     final FPSAnimator animator = new FPSAnimator(glcanvas, FPS, true);
 
@@ -87,10 +93,9 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
     jframe = new JFrame("user test", gc);
     jframe.setForeground(Color.BLACK);
     jframe.setBackground(Color.BLACK);
-    //jframe.setUndecorated(true);
     jframe.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
-    //gdev.setFullScreenWindow(jframe);
-    
+//    jframe.setUndecorated(true);
+//    gdev.setFullScreenWindow(jframe);
     
     
     glcanvas.addGLEventListener( new GLEventListener() {
@@ -190,6 +195,7 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
   long nLastUpdate = 0;
 
   public void display_(GLAutoDrawable drawable) {
+    //glcanvas.getContext().makeCurrent();
     sr.CANVAS_WIDTH = glcanvas.getWidth();
     sr.CANVAS_HEIGHT = glcanvas.getHeight();
 //    sr.CANVAS_WIDTH = jframe.w
@@ -269,5 +275,21 @@ MouseMotionListener, MouseListener, MouseWheelListener, KeyListener{
   @Override
   public void mouseReleased(MouseEvent arg0){
     sr.mouseReleased(arg0);
+  }
+  
+  public static void screenshot(String path, String name, int width, int height){
+    File dir = new File(path);
+    if(!dir.exists()){
+      dir.mkdir();
+    }
+    File file = new File(path + name);
+    try {
+      glcanvas.getContext().makeCurrent();
+      Screenshot.writeToFile(file,width,height);
+      glcanvas.getContext().release();
+    } // end of try
+    catch(IOException ex){
+      System.out.println(ex);
+    } // end of try-catch
   }
 }

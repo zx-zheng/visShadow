@@ -36,12 +36,12 @@ vec3 XYZtoRGB(vec3 xyz){
 
 vec3 RGBnonlinearRGB(vec3 rgb){
   float rd,gd,bd;
-  if(rgb.r<0.018) rd = rgb.r*4.5;
-  else rd = 1.099*pow(rgb.r,0.45)-0.099;
-  if(rgb.g<0.018) gd = rgb.g*4.5;
-  else gd = 1.099*pow(rgb.g,0.45)-0.099;
-  if(rgb.b<0.018) bd = rgb.b*4.5;
-  else bd = 1.099*pow(rgb.b,0.45)-0.099;
+  if(rgb.r<0.0031308) rd = rgb.r*12.92;
+  else rd = 1.055*pow(rgb.r,0.416666667)-0.055;
+  if(rgb.g<0.0031308) gd = rgb.g*12.92;
+  else gd = 1.055*pow(rgb.g,0.416666667)-0.055;
+  if(rgb.b<0.0031308) bd = rgb.b*12.92;
+  else bd = 1.055*pow(rgb.b,0.416666667)-0.055;
   return vec3(rd,gd,bd);
 }
 

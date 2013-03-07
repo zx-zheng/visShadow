@@ -731,6 +731,8 @@ public class Scene1 extends Scene {
     
     numberOfData = new JTextField("0", 3);
     Ctrlpanel.getInstance().addComponent(numberOfData);
+    
+    //Ctrlpanel.getInstance().showCtrlPanel();
   }
   
   private void setMapGUI(GL2GL3 gl, Shader shader){

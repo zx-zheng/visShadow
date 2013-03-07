@@ -281,16 +281,16 @@ public class Test1_2 extends SceneOrganizer{
   
   protected void initOutFile(){
     super.initOutFile();
-    answerOutput +=
-        "lab_l = " + Integer.toString(scene.lab_l.getValue()) + "\n"
-        + "lab_a = " + Integer.toString(scene.lab_a.getValue()) + "\n"
-        + "lab_b = " + Integer.toString(scene.lab_b.getValue()) + "\n"
-        + "shadeRange = " + Integer.toString(scene.shaderange.getValue()) + "\n"
-        + "poissonInterval = " + Integer.toString(scene.possioninterval.getValue()) + "\n"
-        + "viewScale = " + Integer.toString(scene.viewScale.getValue()) + "\n"
-        + "centerShowTime = " + Long.toString(centerShowTime) + "\n"
+    answerOutput
+        .append("lab_l = ").append(scene.lab_l.getValue()).append("\n")
+        .append("lab_a = ").append(scene.lab_a.getValue()).append("\n")
+        .append("lab_b = ").append(scene.lab_b.getValue()).append("\n")
+        .append("shadeRange = ").append(scene.shaderange.getValue()).append("\n")
+        .append("poissonInterval = ").append(scene.possioninterval.getValue()).append("\n")
+        .append("viewScale = ").append(scene.viewScale.getValue()).append("\n")
+        .append("centerShowTime = ").append(centerShowTime).append("\n")
 //        +"marktype, error, alpha, correct, posx, posy, temperature, time\n";
-        +"模様の種類, マークの表示法 0:alpha 1:L, alpha, 間違えたもの, 正誤, 解答時間\n";
+        .append("模様の種類, マークの表示法 0:alpha 1:L, alpha, 間違えたもの, 正誤, 解答時間\n");
   }
   
   private void answer(int ans){
@@ -303,14 +303,14 @@ public class Test1_2 extends SceneOrganizer{
       answerCheck += "Color";
     }
     System.out.println(answerCheck);
-    answerOutput +=  currentProblem.name 
-        + ", "
-        + Integer.toString(currentProblem.combineType)
-        + ", "
-        + Float.toString(currentProblem.alpha) 
-        + ", " 
-        + answerCheck
-        + ", ";
+    answerOutput.append(currentProblem.name)
+        .append(", ")
+        .append(currentProblem.combineType)
+        .append(", ")
+        .append(currentProblem.alpha) 
+        .append(", ") 
+        .append(answerCheck)
+        .append(", ");
     if(ans == answerNum){
       correct();
     } else {

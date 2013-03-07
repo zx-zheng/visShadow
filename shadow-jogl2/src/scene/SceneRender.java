@@ -175,9 +175,9 @@ public class SceneRender extends GuiVariables{
 //    test1.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
 //    currentSO = test1;
     
-//    test1_2 = new Test1_2(15);
-//    test1_2.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
-//    currentSO = test1_2;
+    test1_2 = new Test1_2(15);
+    test1_2.init(gl, scene, CANVAS_WIDTH, CANVAS_HEIGHT);
+    currentSO = test1_2;
     
 //    test2 = new Test2(gl, scene);
 //    currentSO = test2;
@@ -210,9 +210,9 @@ public class SceneRender extends GuiVariables{
 //    pmt3.init(gl);
 //    currentSO = pmt3;
     
-    sc = new SearchColor(10);
-    sc.init(gl);
-    currentSO = sc;
+//    sc = new SearchColor(1);
+//    sc.init(gl);
+//    currentSO = sc;
   }
   
   public void rendering(GL2GL3 gl){

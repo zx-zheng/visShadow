@@ -22,6 +22,8 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.event.ChangeEvent;
 
+import com.jogamp.opengl.util.awt.Screenshot;
+
 import main.Main;
 
 import scene.obj.Billboard;
@@ -46,6 +48,7 @@ public abstract class SceneOrganizer{
   protected long startTime = 0;
   protected long sumOfAnswerTime = 0;
   protected long intervalTime = 1000;
+  protected long offsetTime = 0;
   protected boolean isMeasuring = false;
   protected boolean isAnswered = false;
   protected boolean isInterval = false;
@@ -57,7 +60,7 @@ public abstract class SceneOrganizer{
   protected int numberOfQuestion;
   protected int numberOfAnsweredQuestion = 0;
   protected int numberOfCorrectAnswer = 0;
-  protected String answerOutput = "";
+  protected StringBuilder answerOutput = new StringBuilder();
   
   public int CANVAS_WIDTH;
   public int CANVAS_HEIGHT;
@@ -76,6 +79,8 @@ public abstract class SceneOrganizer{
   shadow, hardShadow;
   protected static float blackAlpha = 0.18f;
   protected static float lDown = 10;
+  
+  protected String outFileName;
   
   static ScheduledExecutorService intervalScheduler;
   static IntervalSchedule intervalSchedule;
@@ -105,6 +110,8 @@ public abstract class SceneOrganizer{
       intervalScheduler = Executors.newSingleThreadScheduledExecutor();
       intervalSchedule = new IntervalSchedule();
       isFirst = false;
+      Ctrlpanel.getInstance().hideCtrlPanel();
+      Ctrlpanel.getInstance().showCtrlPanel();
     }
   }
   
@@ -129,6 +136,7 @@ public abstract class SceneOrganizer{
     blackHardCircle = new Billboard(gl, 
         "resources/Image/TextureImage/blackHardCircle2.png", billBoardSize);
     blackHardCircle.setAlpha(blackAlpha);
+    isBillBoardInit = true;
   }
   
   protected void initClearColor(int L){
@@ -214,9 +222,9 @@ public abstract class SceneOrganizer{
     isQuestioning = false;
     numberOfAnsweredQuestion++;
     if(unableToAnswer.isSelected()){
-      answerOutput += "invalid\n";
+      answerOutput.append("invalid\n");
     }else{
-      answerOutput += elapsedTime + "\n";
+      answerOutput.append(elapsedTime).append("\n");
     }
     unableToAnswer.setSelected(false);
     isAnswered = true;
@@ -226,13 +234,13 @@ public abstract class SceneOrganizer{
   }
   
   protected void correct(){
-    answerOutput += "1, ";
+    answerOutput.append("1, ");
     numberOfCorrectAnswer++; 
     System.out.println("Correct");
   }
   
   protected void wrong(){
-    answerOutput += "0, ";
+    answerOutput.append("0, ");
     System.out.println("wrong");
   }
   
@@ -246,49 +254,48 @@ public abstract class SceneOrganizer{
   }
   
   public long stopMeasureTime(){
-    elapsedTime = System.currentTimeMillis() - startTime;
+    elapsedTime = System.currentTimeMillis() - startTime - offsetTime;
     sumOfAnswerTime += elapsedTime;
     isMeasuring = false;
     return elapsedTime;
   }
   
   protected void initOutFile(){
-    answerOutput += "Test Name = " + TEST_NAME + "\n";
-    answerOutput += "Version = " + TEST_VERSION + "\n";
+    answerOutput.append("Test Name = ").append(TEST_NAME).append("\n");
+    answerOutput.append("Version = ").append(TEST_VERSION).append("\n");
+    Calendar now = Calendar.getInstance();
+    outFileName =
+        TEST_NAME
+        + Integer.toString(now.get(Calendar.YEAR)) + "-"
+        + Integer.toString(now.get(Calendar.MONTH) + 1) + "-"
+        + Integer.toString(now.get(Calendar.DATE)) + "-"
+        + Integer.toString(now.get(Calendar.HOUR_OF_DAY)) + "-"
+        + Integer.toString(now.get(Calendar.MINUTE));
   }
   
   protected boolean answerCheck(){
     return isQuestioning;
   }
   
-  public void saveAnswer(String answers){
-    Calendar now = Calendar.getInstance();
-    String fileName =
-        TEST_NAME
-        + Integer.toString(now.get(Calendar.YEAR)) + "-"
-        + Integer.toString(now.get(Calendar.MONTH) + 1) + "-"
-        + Integer.toString(now.get(Calendar.DATE)) + "-"
-        + Integer.toString(now.get(Calendar.HOUR_OF_DAY)) + "-"
-        + Integer.toString(now.get(Calendar.MINUTE))
-        + ".csv";
+  public void saveAnswer(String answers){    
     File dir = new File("log/" + TEST_NAME);
     if(!dir.exists()){
       dir.mkdir();
     }
-    File file = new File("log/" + TEST_NAME + "/" + fileName);
+    File file = new File("log/" + TEST_NAME + "/" + outFileName + ".csv");
     try{
       PrintWriter pw = 
           new PrintWriter(new BufferedWriter(new FileWriter(file)));
       pw.write(answers);
       pw.close();
-      System.out.println(fileName + " saved");
+      System.out.println(outFileName + " saved");
     }catch(IOException e){
       e.printStackTrace();
     }  
   }
   
   public void endTest(){
-    saveAnswer(answerOutput);
+    saveAnswer(new String(answerOutput));
     System.out.println("Result : " + numberOfCorrectAnswer + " / " + numberOfQuestion);
     System.out.println("Average answer time : " + ((double) sumOfAnswerTime / numberOfQuestion) + " ms");
     
@@ -315,7 +322,7 @@ public abstract class SceneOrganizer{
     
     numberOfAnsweredQuestion = 0;
     numberOfCorrectAnswer = 0;
-    answerOutput = "";
+    answerOutput = new StringBuilder();
     
     isDemo = false;
     isStart = false;
@@ -326,6 +333,7 @@ public abstract class SceneOrganizer{
     unableToAnswer.setVisible(false);
     Main.setUndecorated(false);
     Ctrlpanel.getInstance().getUserTestPane().setVisible(true);
+    Ctrlpanel.getInstance().showCtrlPanel();
   }
   
   public void actionPerformed(ActionEvent e){
@@ -350,6 +358,8 @@ public abstract class SceneOrganizer{
   public void stateChanged(ChangeEvent e) {
     
   }
+  
+
   
   class IntervalSchedule implements Runnable{
 

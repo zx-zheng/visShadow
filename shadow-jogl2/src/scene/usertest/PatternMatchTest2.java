@@ -173,9 +173,9 @@ public class PatternMatchTest2 extends PatternMatchTest{
       currentProblem.billBoard.setAlpha(currentProblem.alphaOfBillBoard);
       System.out.println(currentProblem.alphaOfBillBoard);
     }
-    answerOutput += Integer.toString(currentProblem.problemType) + ", "
-        + Integer.toString(currentProblem.markType) + ", "
-        + Float.toString(currentProblem.alphaOfBillBoard) + ", ";
+    answerOutput.append(currentProblem.problemType).append(", ")
+    .append(currentProblem.markType).append(", ")
+    .append(currentProblem.alphaOfBillBoard).append(", ");
     problemList.remove(index);
     colorMosaic.genColorMosaic(mosaicGridSize, isShadowed);
     colorMosaic.genComparisonColorMosaic(currentProblem.problemType);

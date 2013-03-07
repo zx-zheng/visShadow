@@ -147,6 +147,7 @@ public class Test3Shadow extends SceneOrganizer{
     scene.settingTest3();
     correctAnsValue = scene.test3SetProblem();
     newProblemSet = true;
+    answerSlider.setValue(answerSlider.getMaximum());
   }
 
   @Override
@@ -206,37 +207,38 @@ public class Test3Shadow extends SceneOrganizer{
   
   protected void initOutFile(){
     super.initOutFile();
-    answerOutput +=
-        "lab_l = " + Integer.toString(scene.lab_l.getValue()) + "\n"
-        + "lab_a = " + Integer.toString(scene.lab_a.getValue()) + "\n"
-        + "lab_b = " + Integer.toString(scene.lab_b.getValue()) + "\n"
-        + "shadeRange = " + Integer.toString(scene.shaderange.getValue()) + "\n"
-        + "poissonInterval = " + Integer.toString(scene.possioninterval.getValue()) + "\n"
-        + "viewScale = " + Integer.toString(scene.viewScale.getValue()) + "\n"
-        +"error, correct, posx, posy, temperature, shadowRange, time\n";
+    answerOutput
+        .append("lab_l = ").append(scene.lab_l.getValue()).append("\n")
+        .append("lab_a = ").append(scene.lab_a.getValue()).append("\n")
+        .append("lab_b = ").append(scene.lab_b.getValue()).append("\n")
+        .append("shadeRange = ").append(scene.shaderange.getValue()).append("\n")
+        .append("poissonInterval = ").append(scene.possioninterval.getValue()).append("\n")
+        .append("viewScale = ").append(scene.viewScale.getValue()).append("\n")
+        .append("error, correct, posx, posy, temperature, shadowRange, time\n");
   }
   
   private void answer(){
     if(!answerCheck()) return;
     double error = 
         sliderValueConvert(answerSlider.getValue()) - correctAnsValue;
-    answerOutput += Double.toString(error) 
-        + ", " 
-        + Double.toString(correctAnsValue)
-        + ", "
-        + Double.toString(scene.currentData.getChosenPoint().x)
-        + ", "
-        + Double.toString(scene.currentData.getChosenPoint().y)
-        + ", "
-        + Double.toString(scene.currentData.funcTemp.getDouble(
+    answerOutput.append(error) 
+        .append(", ") 
+        .append(correctAnsValue)
+        .append(", ")
+        .append(scene.currentData.getChosenPoint().x)
+        .append(", ")
+        .append(scene.currentData.getChosenPoint().y)
+        .append(", ")
+       .append(scene.currentData.funcTemp.getDouble(
                 scene.currentData.getChosenPoint().x, 
                 scene.currentData.getChosenPoint().y))
-        + ", "
-        + Integer.toString(scene.shadowrange.getValue()) 
-        + ", ";
+        .append(", ")
+        .append(scene.shadowrange.getValue()) 
+        .append(", ");
     System.out.println(error);
-    answerSlider.setValue(answerSlider.getMaximum());
+    //answerSlider.setValue(answerSlider.getMaximum());
     endQuestion();
+    
   }
   
   @Override

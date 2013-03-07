@@ -251,38 +251,28 @@ public class Test3Compare extends SceneOrganizer{
   
   protected void initOutFile(){
     super.initOutFile();
-    answerOutput +=
-        "lab_l = " + Integer.toString(scene.lab_l.getValue()) + "\n"
-        + "lab_a = " + Integer.toString(scene.lab_a.getValue()) + "\n"
-        + "lab_b = " + Integer.toString(scene.lab_b.getValue()) + "\n"
-        + "shadeRange = " + Integer.toString(scene.shaderange.getValue()) + "\n"
-        + "poissonInterval = " + Integer.toString(scene.possioninterval.getValue()) + "\n"
-        + "viewScale = " + Integer.toString(scene.viewScale.getValue()) + "\n"
-//        +"marktype, error, alpha, correct, posx, posy, temperature, time\n";
-        +"marktype, error, alpha, correct, time\n";
+    answerOutput
+        .append("lab_l = ").append(scene.lab_l.getValue()).append("\n")
+        .append("lab_a = ").append(scene.lab_a.getValue()).append("\n")
+        .append("lab_b = ").append(scene.lab_b.getValue()).append("\n")
+        .append("shadeRange = ").append(scene.shaderange.getValue()).append("\n")
+        .append("poissonInterval = ").append(scene.possioninterval.getValue()).append("\n")
+        .append("viewScale = ").append(scene.viewScale.getValue()).append("\n")
+        .append("marktype, error, alpha, correct, time\n");
   }
   
   private void answer(){
     if(!answerCheck()) return;
     double error = 
         sliderValueConvert(answerSlider.getValue()) - correctAnsValue;
-    answerOutput +=  Integer.toString(currentTA.type) 
-        + ", "
-        + Double.toString(error) 
-        + ", " 
-        + Float.toString(currentTA.alpha) 
-        + ", "
-        + Double.toString(correctAnsValue)
-        + ", "
-//        + Double.toString(scene.currentData.getChosenPoint().x)
-//        + ", "
-//        + Double.toString(scene.currentData.getChosenPoint().y)
-//        + ", "
-//        + Double.toString(scene.currentData.funcTemp.getDouble(
-//                scene.currentData.getChosenPoint().x, 
-//                scene.currentData.getChosenPoint().y))
-//        + ", "
-        ;
+    answerOutput.append(currentTA.type) 
+        .append(", ")
+        .append(error) 
+        .append(", ") 
+        .append(currentTA.alpha) 
+        .append(", ")
+        .append(correctAnsValue)
+        .append(", ");
     System.out.println(error);
     answerSlider.setValue(answerSlider.getMaximum());
     endQuestion();

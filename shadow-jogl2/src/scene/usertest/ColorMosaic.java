@@ -45,8 +45,10 @@ public class ColorMosaic extends SceneBase{
   static boolean guiInit = false;
   static JSlider colorMosaicShadowSlider;
   
+  public float projOffset = 0.1f;
   //左上が(0,0)になるような射影
-  float[] PROJ = {0f, 1f, 1f, 0f, -10, 10};
+  float[] PROJ = {0f - projOffset, 1f + projOffset,
+      1f + projOffset, 0f - projOffset, -10, 10};
 //  float[][] COLOR_LIST = {
 //      {1, 0, 0},
 //      {0, 1, 0},
@@ -64,7 +66,7 @@ public class ColorMosaic extends SceneBase{
   
   Shader monoColorLabShader, billBoardShader, monoColorRGBShader;
   int monoColorLabShaderUniform, monoColorRGBShaderUniform;
-  Billboard whiteRect, shadow;
+  Billboard whiteRect, blackRect, shadow;
   float alphaOfTexture = 1f;
   Vector2DDouble rectPos = new Vector2DDouble(0, 0);
   
@@ -225,6 +227,10 @@ public class ColorMosaic extends SceneBase{
     whiteRect = new Billboard(gl, "resources/Image/TextureImage/whiterectangle.png",
         new Vector2DDouble(0.5, 0.5), 1);
     whiteRect.setShader(billBoardShader);
+    
+    blackRect = new Billboard(gl, "resources/Image/TextureImage/blackrectangle.png",
+        new Vector2DDouble(0.5, 0.5), 1);
+    blackRect.setShader(billBoardShader);
     
     shadow = new Billboard(gl, "resources/Image/TextureImage/shadow4.png",
         new Vector2DDouble(0, 0.5), 1);
@@ -414,7 +420,7 @@ public class ColorMosaic extends SceneBase{
   }
   
   public void genPoissionDisk(double interval){
-    pds = new UniformPoissonDiskSampler(0, 0, 1, 1, interval);
+    pds = new UniformPoissonDiskSampler(-0.5, -0.5, 1.5, 1.5, interval);
     poissonList = pds.sample();
   }
   
@@ -558,27 +564,50 @@ public class ColorMosaic extends SceneBase{
     renderingMosaicLab(gl, problem.secondColor);
   }
   
-  public void serachColorRendering(GL2GL3 gl, scene.usertest.SearchColor.Problem problem){
+  public void serachColorRendering(GL2GL3 gl, scene.usertest.SearchColor.Problem problem,
+      Vector3DDouble clearColorLab, float scale){
     
     if(problem.mark != null){
       if(problem.blendType == 0){
         fboClear(gl);
-        renderingMosaicLab(gl, problem.colorArray);
-        renderingBillBoardList(gl, problem.mark, poissonList, pmt1Rotate, pmt1Scale);
+        //
+        renderingMosaicLab(gl, problem.colorArray, scale);
+        renderingBillBoardList(gl, problem.mark, problem.poissonList, 
+            pmt1Rotate, pmt1Scale);
       } else if(problem.blendType == 1){
-        renderingBillBoardListFBO(gl, problem.mark, poissonList, pmt1Rotate, pmt1Scale);
-        renderingMosaicLab(gl, problem.colorArray);
+        renderingBillBoardListFBO(gl, problem.mark, problem.poissonList, 
+            pmt1Rotate, pmt1Scale);
+        renderingMosaicLab(gl, problem.colorArray, scale);
+        renderingMosaicLab(gl, clearColorLab, new Vector2DDouble(-0.5, -0.5), 10);
       } 
     } else {
       fboClear(gl);
-      renderingMosaicLab(gl, problem.colorArray);
+      renderingMosaicLab(gl, problem.colorArray, scale);
     }
   }
-
+  
   public void renderingMosaicLab(GL2GL3 gl, Vector3DDouble labColor){
-    fboClear(gl);
+    renderingMosaicLab(gl, labColor, new Vector2DDouble(0, 0), 1);
+  }
+
+  public void renderingMosaicLab(GL2GL3 gl, Vector3DDouble labColor, 
+      Vector2DDouble pos, float scale){
+    //fboClear(gl);
     monoColorLabShader.use(gl);
     model.glLoadIdentity();
+    model.glScalef(scale, scale, 1);
+    model.glTranslatef((float) pos.x, (float) pos.y, 0);
+ 
+    monoColorLabShader.updateMatrix(gl, model, Shader.MatrixType.MODEL);
+    setObjColorLab(gl, labColor);
+    board.rendering(gl);   
+  }
+  
+  public void renderingMosaicLab(GL2GL3 gl, Vector3DDouble labColor, float offsetz){
+    //fboClear(gl);
+    monoColorLabShader.use(gl);
+    model.glLoadIdentity();
+    model.glTranslatef(0, 0, offsetz);
     monoColorLabShader.updateMatrix(gl, model, Shader.MatrixType.MODEL);
     setObjColorLab(gl, labColor);
     board.rendering(gl);   
@@ -641,21 +670,21 @@ public class ColorMosaic extends SceneBase{
     renderingMosaicLab(gl, this.colorMosaic, this.isChangedColor, leftup, width);
   }
   
-  public void renderingMosaicLab(GL2GL3 gl, Vector3DDouble[][] colorArray){
+  public void renderingMosaicLab(GL2GL3 gl, Vector3DDouble[][] colorArray, float scale){
     int width = colorArray.length;
     int height = colorArray[0].length;
-    float widthscale = 1 / (float) width;
-    float heightscale = 1 / (float) width;
-    
+    float widthscale = 1 / (float) (width);
+    float heightscale = 1 / (float) (width);
+    float offset = widthscale * (1 - scale) * 0.5f;
     //モザイクの表示
     monoColorLabShader.use(gl);
     model.glLoadIdentity();
     for(int i = 0; i < width; i++){
       for(int j = 0; j < width; j++){
         model.glPushMatrix();
-        model.glTranslatef(i / (float) width, 
-            j / (float) width, 0); 
-        model.glScalef(widthscale, heightscale, 1);
+        model.glTranslatef(i * widthscale + offset, 
+            j * heightscale + offset, 0); 
+        model.glScalef(widthscale * scale, heightscale * scale, 1);
         monoColorLabShader.updateMatrix(gl, model, Shader.MatrixType.MODEL);
         setObjColorLab(gl, colorArray[i][j]);
         board.rendering(gl);
@@ -786,13 +815,14 @@ public class ColorMosaic extends SceneBase{
   
   public void renderingRect(GL2GL3 gl, int width){
     billBoardShader.use(gl); 
+    model.glLoadIdentity();
     model.glPushMatrix();
     model.glTranslatef((float) (rectPos.x / width), 
         (float) (rectPos.y / width), 0); 
     model.glScalef((float) (1.0 / width), 
         (float) (1.0 / width), 1);
     billBoardShader.updateMatrix(gl, model, Shader.MatrixType.MODEL);
-    whiteRect.renderingWithAlpha(gl);
+    blackRect.renderingWithAlpha(gl);
     model.glPopMatrix();
   }
   

@@ -149,8 +149,7 @@ public class PatternMatchTest3 extends PatternMatchTest{
     System.out.println("Question" + (numberOfAnsweredQuestion+1) + "/" + numberOfQuestion);
     int index = (int) (Math.random() * problemList.size());
     currentProblem = problemList.get(index);
-    answerOutput += 
-         currentProblem.markType + ", ";
+    answerOutput.append(currentProblem.markType).append(", ");
     problemList.remove(index);
     hideSchedule.show = true;
     //非表示のスケジュール

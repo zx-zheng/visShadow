@@ -14,12 +14,19 @@ public class ColorUtil{
     double z = zn * Math.pow((p-b/200.0),3.0);
     return new Vector3DDouble(x,y,z);
   }
+  
+  public static Vector3DDouble XYZtoLab(Vector3DDouble xyz){
+    double l, a, b;
+    double xn = 0.9505;
+    double yn = 1.0;
+    double zn = 1.0888;
+    l = 116 * Math.pow(xyz.y,  1.0 / 3) - 16;
+    a = 500 * (Math.pow((xyz.x / xn), 1.0/3) - Math.pow((xyz.y / yn), 1.0/3));
+    b = 200 * (Math.pow((xyz.y / yn), 1.0/3) - Math.pow((xyz.z / zn), 1.0/3));
+    return new Vector3DDouble(l, a, b);
+  }
 
   public static Vector3DDouble XYZtosRGB(Vector3DDouble xyz){
-//    mat3 xyz2rgb = mat3(3.240479, -0.969256, 0.055648,
-//            -1.53715, 1.875991, -0.204043,
-//            -0.498535, 0.041556, 1.057311);
-    //return xyz2rgb * xyz;
     return new Vector3DDouble(3.2406 * xyz.x -1.5372 * xyz.y + -0.4986 * xyz.z ,
         -0.9689 * xyz.x + 1.8758 * xyz.y +0.0415 * xyz.z,
         0.0557 * xyz.x  -0.2040 * xyz.y + 1.0570 * xyz.z);
@@ -27,12 +34,12 @@ public class ColorUtil{
   
   public static Vector3DDouble RGBtoNonlinearRGB(Vector3DDouble rgb){
     double rd, gd, bd;
-    if (rgb.x < 0.018) rd = rgb.x * 4.5;
-    else rd = 1.099 * Math.pow(rgb.x, 0.45) - 0.099;
-    if (rgb.y < 0.018) gd = rgb.y * 4.5;
-    else gd = 1.099 * Math.pow(rgb.y, 0.45) - 0.099;
-    if (rgb.z < 0.018) bd = rgb.z * 4.5;
-    else bd = 1.099 * Math.pow(rgb.z, 0.45) - 0.099;
+    if (rgb.x < 0.0031308) rd = rgb.x * 12.92;
+    else rd = 1.055 * Math.pow(rgb.x, 1.0 / 2.4) - 0.055;
+    if (rgb.y < 0.0031308) gd = rgb.y * 12.92;
+    else gd = 1.055 * Math.pow(rgb.y, 1.0 / 2.4) - 0.055;
+    if (rgb.z < 0.0031308) bd = rgb.z * 12.92;
+    else bd = 1.055 * Math.pow(rgb.z, 1.0 / 2.4) - 0.055;
     return new Vector3DDouble(rd, gd, bd);
   }
   
@@ -49,9 +56,12 @@ public class ColorUtil{
   
   public static Vector3DDouble nonlinearRGBtoLinearRGB(Vector3DDouble rgb){
     double r, g, b;
-    r = Math.pow(((rgb.x + 0.099) / 1.099), 1 / 0.45);
-    g = Math.pow(((rgb.y + 0.099) / 1.099), 1 / 0.45);
-    b = Math.pow(((rgb.z + 0.099) / 1.099), 1 / 0.45);
+    if(rgb.x < 0.040449936) r = rgb.x / 12.92;
+    else r = Math.pow(((rgb.x + 0.055) / 1.055), 2.4);
+    if(rgb.y < 0.040449936) g = rgb.y / 12.92;
+    else g = Math.pow(((rgb.y + 0.055) / 1.055), 2.4);
+    if(rgb.z < 0.040449936) b = rgb.z / 12.92;
+    else b = Math.pow(((rgb.z + 0.055) / 1.055), 2.4);
     return new Vector3DDouble(r, g, b);
   }
   
@@ -64,14 +74,5 @@ public class ColorUtil{
     return new Vector3DDouble(x, y, z);
   }
   
-  public static Vector3DDouble XYZtoLab(Vector3DDouble xyz){
-    double l, a, b;
-    double xn = 0.9505;
-    double yn = 1.0;
-    double zn = 1.0888;
-    l = 116 * Math.pow(xyz.y,  1.0 / 3) - 16;
-    a = 500 * (Math.pow((xyz.x / xn), 1.0/3) - Math.pow((xyz.y / yn), 1.0/3));
-    b = 200 * (Math.pow((xyz.y / yn), 1.0/3) - Math.pow((xyz.z / zn), 1.0/3));
-    return new Vector3DDouble(l, a, b);
-  }
+  
 }
